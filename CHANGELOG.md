@@ -1,5 +1,34 @@
 # Changelog
 
+## v2026.09.29.1 (accurate review labels; 2026-09-29 audit fixes)
+
+Same tools, controls, evidence and review dates as v2026.09.29; it expires on the same date
+(2026-10-28). This re-issue exists because the labels and the poster wording changed.
+
+- **Provenance correction.** Versions v2026.09.27.1 through v2026.09.29 labelled checks "person"
+  (`map.json`) and "human review" (MAP.md), and the README described reviews as a person's. Every
+  review record behind those versions was AI-assessed: `reviewed_by` is `claude` or `claude-code` on
+  all 73 records. No person reviewed the evidence and no owner approval was recorded. The labels are
+  corrected from this version on. The published files of the earlier versions are not edited.
+- Checks are now called what they are: an **AI-assessed review** (`drift review`; `reviewed_by`
+  names the assessor), an **automated re-check** (`drift auto`, a deterministic rule), and
+  **owner-approved** only where `drift approve` recorded an approval from a pull request the owner
+  merged. None of the current reviews is owner-approved; none was backfilled.
+- `map.json` schema 4: `checked_by` is `review` or `auto`, and each tool carries `reviewed_by` and its
+  owner-approval state. The newest map must be the current schema; the four earlier versions are
+  pinned by digest as legacy.
+- Review events now bind outcome, assessor, review date, every receipt's fetch date and any approval
+  (`review_event_hash`); the 73 existing records were migrated without changing any date, outcome or
+  reviewer. A review must rest on evidence fetched at most 7 days before it.
+- The Qwen claim ("updated within the last 30 days") has a freshness rule: once the observed
+  timestamp is older than 30 days it is flagged and not renewed automatically.
+- Poster: the subtitle now reads "12 capability areas an AI build can draw on, example tools for
+  each, and one security control to start with." (was "12 layers every AI build runs on, the tools
+  for each, and the security control none of them should ship without."), and a scope line reads
+  "Illustrative. Not an endorsement or a complete security baseline." The video hook reads "An AI
+  build can touch up to 12 layers. Every one you use is an attack surface."
+- Media: map.png. Videos are rendered on demand for posts.
+
 ## v2026.09.29 (new repository name; publication integrity)
 
 - The repository is now `Double00kevin/ai-security-architecture-map`, published fresh with a single
