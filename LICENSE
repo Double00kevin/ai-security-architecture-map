@@ -19,12 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Scope: this MIT licence covers the code in this repository (drift/, render/*.py,
-scripts/, tests/, .github/, and the build files). The map content (registry/,
-maps/, reports/, CHANGELOG.md and the wording of the 12 security controls) is
-licensed separately under Creative Commons Attribution 4.0 International; see
-LICENSE-CONTENT. The bundled fonts in render/fonts/ carry their own SIL Open
-Font License files.
