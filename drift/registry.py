@@ -64,6 +64,9 @@ RECEIPT_KEYS = ("source_type", "source_url", "locator", "excerpt_chars", "redire
 REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash",
                "review_fetched_at", "review_event_hash")
 APPROVAL_KEYS = ("approved_by", "approved_at", "approval_ref")  # optional; written only by `drift approve`
+OWNER_LOGIN = "Double00kevin"  # the one GitHub account whose merge of a review PR counts as owner approval
+REPOSITORY = "Double00kevin/ai-security-architecture-map"
+APPROVAL_REF_RE = re.compile(r"https://github\.com/" + re.escape(REPOSITORY) + r"/pull/[1-9][0-9]*")
 AUTO_KEYS = ("auto_checked_at", "auto_check_basis", "auto_check_hash")
 HUMAN_REVIEW_MAX_DAYS = 180  # an automated re-check never carries a person's review further than this
 LEGACY_KEYS = ("last_checked", "checked_by")  # replaced by fetched_at; never a review
@@ -191,12 +194,26 @@ def review_event_intact(c: dict) -> bool:
         return False
 
 
+def review_assessment_hash(c: dict) -> str:
+    """The review event without the owner's approval: what an automated re-check carries forward, so a
+    later approval of the same event does not void a re-check made in between."""
+    return _hash({**review_event_payload(c), "approval": None})
+
+
 def auto_check_hash(c: dict) -> str:
     """The automated re-check: the current evidence digest, its date and basis, every receipt's fetch
-    date, and the review event it carries forward."""
+    date, and the review assessment it carries forward."""
     return _hash({"review_hash": review_hash(c), "auto_checked_at": _iso(c.get("auto_checked_at")),
                   "basis": c.get("auto_check_basis"), "fetched_at": fetch_dates(c),
-                  "review_event_hash": c.get("review_event_hash")})
+                  "review_assessment": review_assessment_hash(c)})
+
+
+def owner_approved(c: dict) -> bool:
+    """True only when all three approval fields are present, name the owner and a pull request of this
+    repository, and the review event digest (which covers them) is intact."""
+    if any(c.get(k) in (None, "") for k in APPROVAL_KEYS) or not review_event_intact(c):
+        return False
+    return c["approved_by"] == OWNER_LOGIN and bool(APPROVAL_REF_RE.fullmatch(str(c["approval_ref"])))
 
 
 def review_state(c: dict) -> str:
@@ -435,8 +452,17 @@ def validate(claims: list[dict]) -> list[str]:
             if review_state(c) == "void" and auto_state(c) != "valid":
                 void.append(cid)
         approval = [k for k in APPROVAL_KEYS if c.get(k) not in (None, "")]
-        if approval and (len(approval) != len(APPROVAL_KEYS) or not present):
-            raise RegistryError(f"{cid}: incomplete owner approval (has {approval}); only `drift approve` writes it")
+        if approval:
+            if len(approval) != len(APPROVAL_KEYS) or not present:
+                raise RegistryError(f"{cid}: incomplete owner approval (has {approval}); only `drift approve` writes it")
+            if c["approved_by"] != OWNER_LOGIN or not APPROVAL_REF_RE.fullmatch(str(c["approval_ref"])):
+                raise RegistryError(f"{cid}: approval must name {OWNER_LOGIN} and a pull request of {REPOSITORY}")
+            try:
+                approved = _date(c["approved_at"])
+            except ValueError:
+                raise RegistryError(f"{cid}: approved_at must be YYYY-MM-DD") from None
+            if approved < _date(c["reviewed_at"]):
+                raise RegistryError(f"{cid}: approved_at {approved} is before the review it approves")
         auto_present = [k for k in AUTO_KEYS if c.get(k) not in (None, "")]
         if auto_present:
             if len(auto_present) != len(AUTO_KEYS):
