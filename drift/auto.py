@@ -44,7 +44,7 @@ from . import mapgen, registry, report
 EXIT_OK, EXIT_ERROR, EXIT_SETUP, EXIT_NEEDS_OWNER = 0, 1, 2, 3
 ROUTINE_SOURCES = frozenset({"pypi", "npm", "github_release", "github_tag"})
 ROUTINE_REASONS = frozenset({"version_bump", "section_changed", "stale"})
-RENEW_DAYS = 7  # publish a fresh version when the published one is this close to its re-check deadline
+RENEW_DAYS = mapgen.RENEW_DAYS  # publish a fresh version when the published one is this close to its re-check deadline
 
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?")
 _VERSION = re.compile(r"(?<![\w.])v?\d+(?:\.\d+)+(?:[-+.]?(?:a|b|rc|dev|post|alpha|beta)\.?\d*)*(?![\w.])")

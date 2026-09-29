@@ -4,6 +4,7 @@
     python -m drift map check                          # exit 1 if the newest map is expired, missing or invalid
     python -m drift map check --today 2026-11-01       # replay a date (tests, CI)
     python -m drift map verify                         # rebuild the newest version into a temp dir and diff
+    python -m drift map watch                          # scheduled CI: did the weekly job stall? governance due?
 
 A map's validity is bound to reviewed evidence, not to its version string. `build` refuses when:
 - any on-map claim lacks a valid check (a `supported` AI-assessed review, or an automated re-check
@@ -52,6 +53,9 @@ VERSION_RE = re.compile(r"v(\d{4})\.(\d{2})\.(\d{2})(?:\.(\d+))?")  # optional .
 # 3: per-tool checked_at/checked_by ("person" | "auto"); oldest_check. 4: checked_by is "review" (an
 # AI-assessed review event) | "auto" (automated re-check); per-tool reviewed_by and owner approval.
 SCHEMA_VERSION = 4
+RENEW_DAYS = 7  # the weekly job publishes a fresh version when the published one has this many days left
+WEEKLY_RUN_WEEKDAY = 5  # Saturday (date.weekday()); scripts/weekly-check.ps1 is scheduled then
+GOVERNANCE_WARN_DAYS = 7  # `map watch` fails when a governance review is due within this many days
 EXIT_OK, EXIT_FAILED, EXIT_LEGACY = 0, 1, 4  # 4: the newest version is a pinned legacy map; never success
 # Published versions from before the current schema, pinned by exact version id and the SHA-256 of their
 # map.json (LF line endings, so a CRLF checkout hashes the same). Only these can be read as legacy; a
@@ -539,6 +543,39 @@ def check_expiry(map_path: Path | None, today: dt.date) -> tuple[bool, str]:
     return state == "ok", msg
 
 
+def stalled_publication_margin(today: dt.date) -> int:
+    """Fewest days a healthy published map can have left today. The weekly job (Saturdays) publishes a
+    new version whenever the current one has RENEW_DAYS or fewer days left, so after a healthy run the
+    map had at least RENEW_DAYS + 1 days left, and d days later at least RENEW_DAYS + 1 - d. On a
+    Saturday the day's run may not have happened yet, so d counts from the previous Saturday (7)."""
+    d = (today.weekday() - WEEKLY_RUN_WEEKDAY) % 7 or 7
+    return RENEW_DAYS + 1 - d
+
+
+def watch(map_path: Path | None, governance: list[dict], today: dt.date) -> list[str]:
+    """Detection for the scheduled CI run: problems the owner must hear about before the map lapses."""
+    problems = []
+    state, msg = check_state(map_path, today)
+    if state != "ok":
+        problems.append(f"map check: {msg}")
+    else:
+        m = json.loads(Path(map_path).read_text(encoding="utf-8"))
+        left, margin = (dt.date.fromisoformat(m["expires"]) - today).days, stalled_publication_margin(today)
+        if left < margin:
+            problems.append(f"{m['version']} expires {m['expires']} ({left} day(s) left): the weekly job should already "
+                            f"have published a new version (it publishes at <= {RENEW_DAYS} days left; a healthy map has "
+                            f">= {margin} left today). Check the weekly run's logs and any 'weekly-run-failed' issue.")
+    for g in governance:
+        due = g.get("review_due")
+        name = g.get("short") or g["name"]
+        if not due:
+            problems.append(f"governance {name}: no review_due recorded")
+        elif (registry._date(due) - today).days <= GOVERNANCE_WARN_DAYS:
+            problems.append(f"governance {name}: review due {due} (within {GOVERNANCE_WARN_DAYS} days or overdue); "
+                            "re-check the source and update registry/governance.yaml")
+    return problems
+
+
 CONTENT_TOOL_KEYS = ("name", "id", "status", "owner", "ownership", "source_url")
 
 
@@ -645,6 +682,10 @@ def main(argv: list[str] | None = None) -> int:
     c = sub.add_parser("check", help="fail if the newest map is expired")
     c.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
     c.add_argument("--today")
+    w = sub.add_parser("watch", help="scheduled CI: fail if the weekly job stalled or a governance review is due")
+    w.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
+    w.add_argument("--governance", type=Path, default=GOVERNANCE)
+    w.add_argument("--today")
     v = sub.add_parser("verify", help="rebuild the newest version from current inputs and diff against the committed files")
     v.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
     v.add_argument("--no-render", action="store_true", help="skip the PNG sidecar comparison")
@@ -671,6 +712,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"wrote {MAP_MD.name}" + ("; README map block updated" if update_readme(m) else "; README has no map markers"))
             return 0
         codes = {"ok": EXIT_OK, "failed": EXIT_FAILED, "skipped": EXIT_LEGACY}
+        if args.cmd == "watch":
+            today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
+            problems = watch(latest_map(args.maps_dir), load_governance(args.governance), today)
+            for p in problems:
+                print(f"map watch FAILED: {p}")
+            if not problems:
+                print(f"map watch: ok (publication on schedule; no governance review due within {GOVERNANCE_WARN_DAYS} days)")
+            return EXIT_FAILED if problems else EXIT_OK
         if args.cmd == "verify":
             state, msgs = verify_publication(args.maps_dir, args.registry, args.readme, args.map_md,
                                              render=not args.no_render)

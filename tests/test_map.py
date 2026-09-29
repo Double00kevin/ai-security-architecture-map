@@ -478,3 +478,55 @@ def test_archived_legacy_versions_stay_readable():
 def test_committed_newest_map_is_the_current_schema():
     state, m, msg = M.publication_state(M.latest_map())
     assert state == "current" and m["schema_version"] == M.SCHEMA_VERSION, msg
+
+
+# ---- A07/A10 (minimal): the Monday CI run detects a stalled weekly job and governance coming due ----
+
+def _watch_world(tmp_path, monkeypatch, reviewed_on="2026-09-28", version="v2026.09.28", due="2026-12-31"):
+    import yaml
+    reg, maps, readme, md = _published(tmp_path, monkeypatch, mini_claims(reviewed_on=reviewed_on), version)
+    gov = tmp_path / "gov.yaml"
+    gov.write_text(yaml.safe_dump({"governance": [{"name": "A", "source_url": "https://a.invalid/",
+                                                    "reviewed_at": "2026-09-27", "review_due": due}]}), encoding="utf-8")
+    return ["watch", "--maps-dir", str(maps), "--governance", str(gov)]
+
+
+def test_watch_threshold_is_derived_from_the_weekly_publish_threshold():
+    from drift import auto as A
+    assert A.RENEW_DAYS == M.RENEW_DAYS
+    # Monday 2026-10-19: the last Saturday run was 2026-10-17 (2 days ago). A healthy run publishes when
+    # <= RENEW_DAYS days are left, so on Monday a healthy map has at least RENEW_DAYS + 1 - 2 days left.
+    assert M.stalled_publication_margin(dt.date(2026, 10, 19)) == M.RENEW_DAYS - 1
+
+
+@pytest.mark.parametrize("today,margin", [("2026-10-18", 7), ("2026-10-19", 6), ("2026-10-20", 5),
+                                          ("2026-10-23", 2), ("2026-10-24", 1)])
+def test_stalled_margin_counts_days_since_the_last_saturday_run(today, margin):
+    """RENEW_DAYS + 1 - days since the last Saturday run (Sunday 1 ... Saturday 7: that day's own run may
+    not have happened yet, so it counts from the previous Saturday)."""
+    assert M.RENEW_DAYS == 7
+    assert M.stalled_publication_margin(dt.date.fromisoformat(today)) == margin
+
+
+@pytest.mark.parametrize("today,ok", [("2026-10-19", True), ("2026-10-26", False)])
+def test_watch_on_mondays(tmp_path, monkeypatch, capsys, today, ok):
+    """Expires 2026-10-28. Monday 19th: 9 days left, healthy. Monday 26th: 2 days left, so the Saturday
+    run (5 days left, within RENEW_DAYS) should have published and did not: fail loudly."""
+    argv = _watch_world(tmp_path, monkeypatch)
+    assert M.main(argv + ["--today", today]) == (0 if ok else 1)
+    out = capsys.readouterr().out
+    if not ok:
+        assert "weekly job" in out and "should already have published" in out
+
+
+@pytest.mark.parametrize("due,ok", [("2026-10-27", True), ("2026-10-26", False), ("2026-10-01", False)])
+def test_watch_fails_when_a_governance_review_is_due_within_7_days_or_overdue(tmp_path, monkeypatch, capsys, due, ok):
+    argv = _watch_world(tmp_path, monkeypatch, due=due)
+    assert M.main(argv + ["--today", "2026-10-19"]) == (0 if ok else 1)
+    if not ok:
+        assert "governance A" in capsys.readouterr().out
+
+
+def test_watch_fails_on_an_invalid_or_expired_map(tmp_path, monkeypatch):
+    argv = _watch_world(tmp_path, monkeypatch)
+    assert M.main(argv + ["--today", "2026-11-02"]) == 1
