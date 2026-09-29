@@ -11,7 +11,8 @@ For every claim, using the fresh evidence already in the check report (nothing i
   receipt is either unchanged or changed only in version numbers and dates on a package/release
   source (PyPI, npm, GitHub releases/tags). The new excerpts are written to the registry and an
   automated re-check record is added (auto_checked_at / auto_check_basis / auto_check_hash).
-- LEFT FOR A PERSON otherwise: a changed page section, a lifecycle signal, a source that could not be
+- LEFT FOR A PERSON otherwise: a changed page section, a lifecycle signal, a broken freshness rule
+  (a time-based claim whose observed timestamp is now too old), a source that could not be
   fetched, an unresolved or missing review, evidence that does not match its digest, a claim edited
   since its review, or a review older than 180 days. Nothing about such a claim is changed; its last
   check keeps counting down, and the map stays live until the oldest check is 30 days old.
@@ -100,6 +101,9 @@ def decide(c: dict, findings: list[dict], today: dt.date) -> tuple[bool, str]:
     routine = []
     for i, r in enumerate(receipts):
         f = by_receipt[i]
+        fresh = registry.freshness_problem(r, f.get("new_excerpt"), today)
+        if fresh:
+            return False, f"receipt {i}: {fresh}"
         other = set(f.get("reasons") or []) - ROUTINE_REASONS
         if other:
             return False, f"receipt {i}: {', '.join(sorted(other))}"

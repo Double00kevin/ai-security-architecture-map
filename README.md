@@ -93,6 +93,7 @@ Weekly, `drift check` fetches the source behind each receipt (only URLs already 
 - the source reports a **new version**,
 - the located **page excerpt's hash changed**,
 - the source publishes a **lifecycle signal** (deprecated, yanked, Inactive, archived, end of life),
+- a **time-based claim** no longer holds: a receipt's `freshness` rule says its observed timestamp must be at most N days old, and it isn't,
 - the claim has **no valid check (a person's review or an automated re-check) in the last 30 days**, or
 - the source **can't be fetched** (a claim we can no longer prove).
 

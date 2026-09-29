@@ -7,6 +7,8 @@ and flags it when any of these hold:
 - section_changed: the hash of the fresh excerpt differs from snapshot_hash
 - lifecycle: the source itself publishes an end-of-life signal (npm deprecated, yanked or Inactive
   PyPI release, archived GitHub repo, release notes mentioning deprecation or end of life)
+- freshness: the receipt has a `freshness` rule and the timestamp it names in the fresh excerpt (or the
+  stored one, if the source could not be fetched) is older than max_age_days
 - stale: the claim has no valid check (a person's supported review or an automated re-check), or the
   newest one is more than STALE_DAYS (30) days old
   (on the claim's primary receipt only; fetched_at never counts as a review)
@@ -98,6 +100,10 @@ def compare(c: dict, ev, today: dt.date, receipt: int = 0) -> Finding:
         # text is part of the excerpt) and reviewed it, the same signal does not re-flag every week.
         if any(sig not in (r.get("snapshot") or "") for sig in f.lifecycle):
             f.reasons.append("lifecycle")
+    fresh = registry.freshness_problem(r, ev.excerpt if ev is not None else r.get("snapshot"), today)
+    if fresh:
+        f.reasons.append("freshness")
+        f.notes.append(fresh)
     if receipt == 0:
         # Claim-level states that an unchanged source must not hide.
         f.review_outcome = c.get("review_outcome")

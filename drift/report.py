@@ -23,6 +23,7 @@ REASON_LABEL = {
     "version_bump": "new version",
     "section_changed": "page section changed",
     "lifecycle": "LIFECYCLE SIGNAL",
+    "freshness": "TIME-BASED CLAIM NO LONGER HOLDS",
     "stale": "review due (none valid in 30 days)",
     "error": "could not verify",
     "unresolved_review": "REVIEW NOT SUPPORTED (unresolved)",

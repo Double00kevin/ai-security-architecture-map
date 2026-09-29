@@ -25,6 +25,27 @@ fetched by the same weekly `drift check` run, and records that run's date as eve
 `fetched_at`. There is no evidence policy yet for stable historical facts whose source cannot be
 re-fetched; see `DEFERRED.md`.
 
+## Time-based claims (freshness rules)
+
+Some claims are only true while something recent keeps happening. The Qwen claim says the Qwen
+organisation's most recently modified model repository "was updated within the last 30 days"; an
+unchanged excerpt stops being evidence for that after 30 days. Such a receipt carries a rule:
+
+```yaml
+freshness:
+  field: lastModified   # the JSON key whose ISO timestamp the excerpt holds
+  max_age_days: 30
+```
+
+`drift check` flags the receipt (`freshness`) when the timestamp in the fresh excerpt (or the stored
+one, if the source could not be fetched) is older than `max_age_days`; triage routes it to the owner
+without a model call; `drift auto` refuses to renew the claim and gives the reason in its report.
+
+The rule is deliberately **not** part of the review or claim digest: it is a check setting, not
+something the claim says, and binding it would have voided the existing Qwen review, which may only
+be re-recorded after the evidence is actually re-read. The consequence is that removing or loosening a
+rule does not void a review; that edit is visible only in git history and review.
+
 The 180-day rule limits the age of the human review **when an automatic check is made**. An accepted
 check can support a publication for up to 30 more days. It is not a hard 180-day lifetime for the map.
 

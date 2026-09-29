@@ -60,7 +60,7 @@ HEADER = (
 
 REQUIRED = ("id", "layer", "layer_name", "tool", "claim", "status", "source_type", "source_url")
 RECEIPT_KEYS = ("source_type", "source_url", "locator", "excerpt_chars", "redirect_to",
-                "snapshot", "snapshot_hash", "last_version", "fetched_at", "supports")
+                "snapshot", "snapshot_hash", "last_version", "fetched_at", "supports", "freshness")
 REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash",
                "review_fetched_at", "review_event_hash")
 APPROVAL_KEYS = ("approved_by", "approved_at", "approval_ref")  # optional; written only by `drift approve`
@@ -69,6 +69,7 @@ HUMAN_REVIEW_MAX_DAYS = 180  # an automated re-check never carries a person's re
 LEGACY_KEYS = ("last_checked", "checked_by")  # replaced by fetched_at; never a review
 ID_RE = re.compile(r"L(\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*")
 HASH_RE = re.compile(r"sha256:[0-9a-f]{64}")
+FIELD_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 class RegistryError(ValueError):
@@ -278,6 +279,29 @@ def review_fetch_problems(c: dict) -> list[str]:
     return fetch_window_problems(list(c.get("review_fetched_at") or []), c.get("reviewed_at"))
 
 
+def freshness_problem(r: dict, excerpt: str | None, today: dt.date) -> str | None:
+    """A receipt's optional `freshness: {field, max_age_days}` rule, for claims that are only true while
+    something recent keeps happening (e.g. "updated within the last 30 days"). `field` names the JSON key
+    whose ISO timestamp the excerpt holds (`"lastModified":"2026-09-27T02:00:18.000Z"`). Returns why the
+    excerpt breaks the rule on `today`, or None. The rule is a check setting, not claim content: it is
+    not part of the review or claim digest (adding it must not void a review; see docs/PUBLICATION.md)."""
+    rule = r.get("freshness")
+    if not rule:
+        return None
+    field, limit = rule["field"], rule["max_age_days"]
+    m = re.search(r'"' + re.escape(field) + r'"\s*:\s*"([^"]+)"', excerpt or "")
+    if not m:
+        return f"freshness: no {field} timestamp in the excerpt"
+    try:
+        seen = dt.date.fromisoformat(m.group(1)[:10])
+    except ValueError:
+        return f"freshness: {field} {m.group(1)[:40]!r} is not an ISO date"
+    age = (today - seen).days
+    if age > limit:
+        return f"freshness: {field} {seen} is {age} days old (limit {limit})"
+    return None
+
+
 def uncovered_assertions(c: dict) -> list[str]:
     """Assertions in the claim with no receipt that both supports them and holds a snapshot."""
     covered: set[str] = set()
@@ -331,6 +355,13 @@ def _validate_receipt(cid: str, i: int, r: dict) -> None:
         _date(r.get("fetched_at"))
     except ValueError:
         raise RegistryError(f"{where}: fetched_at must be YYYY-MM-DD") from None
+    rule = r.get("freshness")
+    if rule is not None:
+        ok = (isinstance(rule, dict) and set(rule) == {"field", "max_age_days"}
+              and isinstance(rule["field"], str) and FIELD_RE.fullmatch(rule["field"])
+              and type(rule["max_age_days"]) is int and rule["max_age_days"] > 0)
+        if not ok:
+            raise RegistryError(f"{where}: freshness must be {{field: <json key>, max_age_days: <positive int>}}")
 
 
 def validate(claims: list[dict]) -> list[str]:

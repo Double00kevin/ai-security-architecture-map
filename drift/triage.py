@@ -260,6 +260,9 @@ def triage_findings(findings: list[dict], claims_by_id: dict, api_key: str | Non
         claim_text = f.get("claim") or claims_by_id.get(f["id"], {}).get("claim", "")
         if "error" in f["reasons"]:
             r.update(verdict="needs_human", reason=f"source could not be verified: {f.get('error')}", source="rule", outcome="rule")
+        elif "freshness" in f["reasons"]:
+            why = next((n for n in f.get("notes") or [] if n.startswith("freshness:")), "freshness rule broken")
+            r.update(verdict="needs_human", reason=f"time-based claim no longer holds ({why})", source="rule", outcome="rule")
         elif not needs_model:
             why = ("excerpt does not match its stored digest: re-take it and review" if r["integrity"] else
                    "review not supported: fix the receipt or the claim" if r["review_unresolved"] else
