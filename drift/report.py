@@ -120,7 +120,7 @@ def render_markdown(findings, s: dict, meta: dict | None = None) -> str:
     if meta:
         lines += [f"Run `{meta['run_id']}`, registry `{meta['registry_sha256']}`, "
                   f"commit `{meta.get('git_commit') or 'unknown'}`.", ""]
-    lines += ["Flagged claims need a human re-check. This report never changes the registry; "
+    lines += ["Flagged claims wait for the owner's decision. This report never changes the registry; "
               "update a claim only after reading the source.", ""]
     flagged = [f for f in findings if f.flagged]
     if flagged:

@@ -10,7 +10,7 @@
                                   needs .env with the API key; budget-capped)
   3. python -m drift auto        (renew routine claims from this run's report; build and render a new
                                   map version when content changed or the published one is near its
-                                  re-check deadline; anything else is left for a person)
+                                  re-check deadline; anything else waits for the owner's decision)
   4. python -m drift map check   (is the newest map still valid?)
   5. publish: commit only reports\, registry\claims.yaml, maps\, README.md, MAP.md and CHANGELOG.md,
      and push with an explicit refspec HEAD:main
@@ -156,7 +156,7 @@ if ($flagged -gt 0 -and $check -ne 2) {
     $code = Invoke-Native python @('-m', 'drift', 'triage', '--report', $newest.FullName)
     if ($code -eq 0) { $status.triage = 'ok' } else { $status.triage = 'failed'; Write-Stamped "triage exit code: $code" }
   } else {
-    Write-Stamped "triage skipped: no .env (flagged findings stay untriaged for a human)"
+    Write-Stamped "triage skipped: no .env (flagged findings stay untriaged for the owner's decision)"
     $status.triage = 'skipped'
   }
 } else {
@@ -164,13 +164,13 @@ if ($flagged -gt 0 -and $check -ne 2) {
 }
 
 # ---- 3. auto: renew routine claims, publish a new version when needed ----------------------------
-# Runs on this run's full report even when some sources errored: those claims are left for a person.
+# Runs on this run's full report even when some sources errored: those claims wait for the owner's decision.
 if ($newest) {
   Write-Stamped "python -m drift auto --report reports\$($newest.Name)"
   $code = Invoke-Native python @('-m', 'drift', 'auto', '--report', $newest.FullName)
   switch ($code) {
     0 { $status.auto = 'ok' }
-    3 { $status.auto = 'needs_person'; Write-Stamped "some claims need a person; see reports\*-auto.md" }
+    3 { $status.auto = 'needs_owner'; Write-Stamped "some claims wait for the owner's decision; see reports\*-auto.md" }
     default { $status.auto = 'failed'; Write-Stamped "drift auto exit code: $code" }
   }
 }
@@ -240,5 +240,5 @@ $failed = @($status.Keys | Where-Object { $status[$_] -eq 'failed' })
 if ($failed.Count -gt 0) { Write-Stamped ("FAILED stage(s): " + ($failed -join ', ')); Complete-Run 1 }
 (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') | Set-Content -Path $successFile -Encoding UTF8
 Write-Stamped "last success recorded in logs\$(Split-Path -Leaf $successFile)"
-if ($status.check -eq 'flagged' -or $status.auto -eq 'needs_person') { Complete-Run 3 }
+if ($status.check -eq 'flagged' -or $status.auto -eq 'needs_owner') { Complete-Run 3 }
 Complete-Run 0

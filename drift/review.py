@@ -1,17 +1,23 @@
-"""`drift review`: record that a person read a claim's evidence, and what they concluded.
+"""`drift review`: record a review event: an assessment of a claim's evidence, and its outcome.
 
     python -m drift review --status                      # every claim: review state, why it can't publish
-    python -m drift review --id L02-litellm --outcome supported --by <name>
+    python -m drift review --id L02-litellm --outcome supported --by <assessor>
 
-This is the only command that writes the review record (reviewed_at, reviewed_by, review_outcome,
-review_hash, review_claim_hash). It is never run by `check`, `snapshot`, `triage`, `auto` or the
-weekly job. Run it only after
-reading every receipt's excerpt for the claim and deciding whether it supports each assertion in the
-claim text.
+This is the only command that writes the review event (reviewed_at, reviewed_by, review_outcome,
+review_hash, review_claim_hash, review_fetched_at, review_event_hash). It is never run by `check`,
+`snapshot`, `triage`, `auto` or the weekly job. `--by` names the assessor. In this repository reviews
+are AI-assessed: the assessor (`claude`, `claude-code`) reads every receipt's excerpt for the claim
+and decides whether it supports each assertion in the claim text. That is an assessment, not proof:
+the proof is the primary-source excerpt and its hash, which anyone can re-check. The human decision
+is the owner's approval, recorded separately by `drift approve` after the owner merges the pull
+request that adds the review. A new review event carries no approval.
+
+Every receipt must have been fetched on the review date or at most REVIEW_FETCH_MAX_DAYS (7) days
+before it.
 
 `review_hash` covers the claim text, tool, layer, status, owner, ownership event, assertions, and
 every receipt's source_url, source type, extraction/redirect settings, snapshot_hash and supports list. Change any of them and the review is
-void until someone reviews again.
+void until a new review is recorded.
 
 An outcome of `supported` is refused when a receipt has no snapshot or an assertion has no
 supporting receipt; record `partial` or `unsupported` instead, or narrow the claim.
@@ -69,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--status", action="store_true", help="list review state for every claim; writes nothing")
     g.add_argument("--id", action="append", help="claim id to record a review for (repeatable)")
     ap.add_argument("--outcome", choices=registry.REVIEW_OUTCOMES)
-    ap.add_argument("--by", help="who read the evidence")
+    ap.add_argument("--by", help="the assessor that read the evidence (e.g. claude-code)")
     ap.add_argument("--date", help="review date YYYY-MM-DD (default today; never in the future)")
     ap.add_argument("--registry", type=Path, default=registry.REGISTRY)
     args = ap.parse_args(argv)

@@ -5,9 +5,9 @@ outside the checkout or in a deliberately ignored local directory. The job refus
 left in `maps/` or `reports/` before the run.
 
 Automatic re-checks require a valid starting chain: either the current evidence still has a valid
-supported human review, or a valid previous automatic check carries that review. Refreshing a
-snapshot can break both. An unchanged response on the next run cannot repair that chain; a person
-must read the new evidence and record a review. Source type, locator, excerpt length and approved
+supported review, or a valid previous automatic check carries that review. Refreshing a snapshot can
+break both. An unchanged response on the next run cannot repair that chain; the new evidence must be
+assessed and a new review recorded. Source type, locator, excerpt length and approved
 redirect are part of the binding as well as the URL and evidence digest.
 
 ## Evidence freshness at review time
@@ -46,7 +46,7 @@ something the claim says, and binding it would have voided the existing Qwen rev
 be re-recorded after the evidence is actually re-read. The consequence is that removing or loosening a
 rule does not void a review; that edit is visible only in git history and review.
 
-The 180-day rule limits the age of the human review **when an automatic check is made**. An accepted
+The 180-day rule limits the age of the review **when an automatic check is made**. An accepted
 check can support a publication for up to 30 more days. It is not a hard 180-day lifetime for the map.
 
 Before publishing a version, the builder prepares its JSON, renders and verifies the PNG and sidecar
@@ -83,6 +83,43 @@ expanding the binding to source extraction settings. Only `review_hash` and `rev
 recomputed. No excerpt, claim, source setting, reviewer, review date or outcome was changed. This is
 a binding-format migration, not a new factual review, and it does not extend any expiry date.
 
-New schema-3 maps also retain each tool's human-review hash and the hash of the check used. These
+Schema-3 and later maps also retain each tool's review hash and the hash of the check used. These
 hashes are audit references, not signatures. Verifying a historical publication independently of
 today's registry still needs the input/artifact manifest tracked in `DEFERRED.md`.
+
+## What each check is (2026-09-29 audit, A01)
+
+- **AI-assessed review** (`drift review`): an assessor reads each receipt's excerpt and records
+  whether it supports the claim. `reviewed_by` names the assessor; every record so far is `claude`
+  or `claude-code`. The assessment is not proof; the excerpt and its SHA-256 are the evidence.
+- **Automated re-check** (`drift auto`): the deterministic weekly rule that carries a supported
+  review forward across version/date-only changes. No AI is involved.
+- **Owner-approved**: the human decision. `drift approve --pr <n>` runs after the owner merges the
+  pull request that added or changed review events, and its commit goes to `main` by the owner. It
+  asks the GitHub API whether the PR was merged into `main` by `Double00kevin` (`registry.OWNER_LOGIN`),
+  compares `registry/claims.yaml` at the merge commit's first parent and at the merge commit, and
+  stamps `approved_by`, `approved_at` (the PR's `merged_at` date) and `approval_ref` (the PR URL) on
+  only the claims whose review event the PR added or changed. It refuses on any mismatch and writes
+  nothing. MAP.md and `map.json` (schema 4, `owner_approved` per tool) say "owner-approved" only when
+  all three fields are present and the review event digest is valid. The digest is an integrity
+  check, not a signature: whoever can push to `main` could forge one, so git history and branch
+  protection remain the control.
+
+Versions v2026.09.27.1 through v2026.09.29 labelled checks "person" (`map.json` schema 3) or "human
+review" (MAP.md) although every review record was AI-assessed. Those published files are not edited;
+the CHANGELOG records the correction.
+
+## Review-event migration (2026-09-29 audit, A03)
+
+`drift migrate review-events` added `review_fetched_at` and `review_event_hash` to the 73 existing
+review records. It takes no date or reviewer as input, changes no existing field, refuses an old
+record that is not currently valid, and refuses to run twice, so it cannot make a review younger or
+revive a void one. No review was re-recorded and no approval was backfilled.
+
+## Current publication schema (2026-09-29 audit, A02)
+
+The newest map version is the current publication and must carry the current `schema_version`
+(`drift/mapgen.py`, `SCHEMA_VERSION`). A missing, lower, unknown or non-integer schema fails
+`map check` and `map verify`. Historical versions are pinned in `LEGACY_MAPS` by exact version id and
+the SHA-256 of their `map.json` (LF line endings); if one of them is the newest version, both
+commands report SKIPPED and exit 4, which is not success. Pinned versions stay readable.

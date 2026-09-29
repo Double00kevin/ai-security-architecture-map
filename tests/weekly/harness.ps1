@@ -179,12 +179,12 @@ try {
   Assert-That $n ($r.stages.check -eq 'failed') "check failed (got $($r.stages.check))"
   Assert-That $n (-not $r.success) 'no last-success marker'
 
-  # 4b. auto leaves something for a person: not a failure, exit 3, still published
-  $n = 'needs-person'; "scenario: $n"
+  # 4b. auto leaves something for the owner's decision: not a failure, exit 3, still published
+  $n = 'needs-owner'; "scenario: $n"
   $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_AUTO_EXIT = 3 }
   Test-Common $n $r
   Assert-That $n ($r.code -eq 3) "exit 3 (got $($r.code))"
-  Assert-That $n ($r.stages.auto -eq 'needs_person') "auto needs_person (got $($r.stages.auto))"
+  Assert-That $n ($r.stages.auto -eq 'needs_owner') "auto needs_owner (got $($r.stages.auto))"
   Assert-That $n ($r.success) 'last-success written (nothing failed)'
   Assert-That $n ($r.originCommits -eq 2) 'published'
 

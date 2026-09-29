@@ -9,14 +9,14 @@ and flags it when any of these hold:
   PyPI release, archived GitHub repo, release notes mentioning deprecation or end of life)
 - freshness: the receipt has a `freshness` rule and the timestamp it names in the fresh excerpt (or the
   stored one, if the source could not be fetched) is older than max_age_days
-- stale: the claim has no valid check (a person's supported review or an automated re-check), or the
+- stale: the claim has no valid check (a supported review or an automated re-check), or the
   newest one is more than STALE_DAYS (30) days old
   (on the claim's primary receipt only; fetched_at never counts as a review)
 - error: the source could not be fetched or parsed (a claim we can no longer prove)
 
 It writes reports/<run_id>.md and .json (run_id = UTC timestamp YYYY-MM-DDTHHMMSSZ, plus the scope
-for partial runs) and never modifies the registry. Deciding what a change means is a human job
-(`drift triage` adds JSON-only AI classification as advice).
+for partial runs) and never modifies the registry. Deciding what a change means is the owner's
+decision (`drift triage` adds JSON-only AI classification as advice).
 
 Exit codes: 0 nothing flagged, 3 something flagged, 1 errors occurred.
 """
@@ -96,8 +96,8 @@ def compare(c: dict, ev, today: dt.date, receipt: int = 0) -> Finding:
             f.reasons.append("version_bump")
         if r.get("snapshot_hash") and f.new_hash != r["snapshot_hash"]:
             f.reasons.append("section_changed")
-        # A lifecycle signal is flagged when it is new. Once a person has re-taken the evidence (the signal
-        # text is part of the excerpt) and reviewed it, the same signal does not re-flag every week.
+        # A lifecycle signal is flagged when it is new. Once the evidence has been re-taken (the signal
+        # text is part of the excerpt) and reviewed, the same signal does not re-flag every week.
         if any(sig not in (r.get("snapshot") or "") for sig in f.lifecycle):
             f.reasons.append("lifecycle")
     fresh = registry.freshness_problem(r, ev.excerpt if ev is not None else r.get("snapshot"), today)

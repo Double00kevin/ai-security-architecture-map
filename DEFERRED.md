@@ -6,7 +6,7 @@ would count as closed. No GitHub issues were opened for these; the owner decides
 ## F10: adversarial corpus for the injection filter
 
 - Done: README and `drift/triage.py` say the filter is a heuristic and the containment is that the
-  model has no side-effecting tools and a human reviews; vendor text is Markdown-escaped in reports.
+  model has no side-effecting tools and the owner decides; vendor text is Markdown-escaped in reports.
 - Left: a corpus of injection-shaped vendor text (paraphrases, other languages, Unicode confusables,
   zero-width characters, instructions split across the before/after excerpts, instructions inside
   version strings) with a measured miss rate for `INJECTION_RE`, and the same corpus replayed against

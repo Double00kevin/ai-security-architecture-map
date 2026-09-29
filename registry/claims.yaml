@@ -1,7 +1,8 @@
 # Claim registry for the 12-layer AI architecture map.
 # One record per tool per layer. claim/status/owner/assertions/supports are edited by hand after
 # reading the source; snapshot fields and fetched_at are written by `python -m drift snapshot`;
-# the review record (reviewed_*, review_*) is written only by a person via `python -m drift review`.
+# the review event (reviewed_*, review_*) only by `python -m drift review` (an AI-assessed review;
+# reviewed_by names the assessor); approved_* only by `python -m drift approve`.
 claims:
 - id: L01-claude
   layer: 1

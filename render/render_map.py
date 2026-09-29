@@ -309,7 +309,7 @@ def render(m: dict, skip: frozenset[str] = frozenset()) -> Canvas:
 def version_line(m: dict, repo: bool = True) -> str:
     """Provenance and deadline printed on every shareable render, built only from map.json: the map
     version, the oldest review behind it, when it is due for review, and where the receipts live."""
-    if m.get("schema_version", 1) >= 3:  # checks may be a person's review or an automated re-check
+    if m.get("schema_version", 1) >= 3:  # checks may be a review or an automated re-check
         parts = [f"map {m['version']}", f"checked {m.get('oldest_check') or m['date']}", f"re-check due {m['expires']}"]
     else:
         parts = [f"map {m['version']}", f"oldest review {m.get('oldest_review') or m['date']}", f"review due {m['expires']}"]

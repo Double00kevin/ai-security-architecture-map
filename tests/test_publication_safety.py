@@ -102,7 +102,7 @@ def test_document_promotion_failure_restores_registry_docs_and_version(world, mo
     monkeypatch.setattr(A.os, 'replace', fail_readme)
     with pytest.raises(OSError, match='promotion failure'):
         A.build_version(world['claims'], f'v{TODAY:%Y.%m.%d}', TODAY, 'renewal',
-                        {'renewed': 69, 'needs_person': 0}, world['maps'], world['reg'])
+                        {'renewed': 69, 'needs_owner': 0}, world['maps'], world['reg'])
     assert all(p.read_bytes() == content for p, content in before.items())
     assert M.existing_versions(world['maps']) == versions
 

@@ -6,23 +6,31 @@ receipt says which assertions it evidences (`supports:`), and the claim lists th
 text makes (`assertions:`). A claim is publishable only when every assertion has a receipt with a
 snapshot that supports it.
 
-Two kinds of dates, never mixed:
+Kinds of record, never mixed:
 - `fetched_at` (per receipt) is written by `drift snapshot`. It says when evidence was fetched,
-  nothing about whether anyone read it.
-- the review record (`reviewed_at`, `reviewed_by`, `review_outcome`, `review_hash`,
-  `review_claim_hash`) is written only by a person running `drift review`. `review_hash` binds the
-  review to exactly what was reviewed; when the claim, its status, owner, ownership event, sources or
-  evidence change, the hash no longer matches and the review is void. `review_claim_hash` binds it to
-  the claim alone (everything except the excerpts' digests).
+  nothing about whether anyone assessed it.
+- the review event (`reviewed_at`, `reviewed_by`, `review_outcome`, `review_hash`,
+  `review_claim_hash`, `review_fetched_at`, `review_event_hash`) is written only by `drift review`.
+  It records an AI-assessed review: `reviewed_by` names the assessor (every record so far is
+  `claude` or `claude-code`), which read the receipts' excerpts and judged whether they support the
+  claim. `review_hash` binds the review to exactly what was assessed; when the claim, its status,
+  owner, ownership event, sources or evidence change, the hash no longer matches and the review is
+  void. `review_claim_hash` binds it to the claim alone (everything except the excerpts' digests).
+  `review_event_hash` binds outcome, assessor, date, fetch dates and any approval to both.
+- the owner's approval (`approved_by`, `approved_at`, `approval_ref`) is optional, part of the review
+  event, and written only by `drift approve` from a pull request the owner merged. Only a claim with
+  a valid approval may be called owner-approved.
 - the automated re-check (`auto_checked_at`, `auto_check_basis`, `auto_check_hash`) is written only
-  by `drift auto` in the weekly job. It carries a person's `supported` review forward across routine
-  evidence changes: the claim itself must be unchanged since that review (`review_claim_hash`), the
-  review must be at most HUMAN_REVIEW_MAX_DAYS old when the re-check is made, and every changed
-  receipt must differ only in version numbers and dates. Anything else waits for a person.
+  by `drift auto` in the weekly job, by a deterministic rule (no AI). It carries a `supported` review
+  forward across routine evidence changes: the claim itself must be unchanged since that review
+  (`review_claim_hash`), the review must be at most REVIEW_MAX_DAYS old when the re-check is made,
+  and every changed receipt must differ only in version numbers and dates. Anything else waits for
+  the owner's decision.
 
 Every stored `snapshot_hash` is recomputed from its `snapshot` whenever the registry is read. A
 malformed digest is a registry error; a digest that does not match its excerpt voids the claim's
-review and blocks publication until `drift snapshot` re-takes the evidence and a person reviews it.
+review and blocks publication until `drift snapshot` re-takes the evidence and a new review is
+recorded.
 This catches accidental or partial edits. It is not a signature: someone who rewrites an excerpt and
 its digest and the review hash together is not detected here (git history and review are the control).
 """
@@ -55,7 +63,8 @@ HEADER = (
     "# Claim registry for the 12-layer AI architecture map.\n"
     "# One record per tool per layer. claim/status/owner/assertions/supports are edited by hand after\n"
     "# reading the source; snapshot fields and fetched_at are written by `python -m drift snapshot`;\n"
-    "# the review record (reviewed_*, review_*) is written only by a person via `python -m drift review`.\n"
+    "# the review event (reviewed_*, review_*) only by `python -m drift review` (an AI-assessed review;\n"
+    "# reviewed_by names the assessor); approved_* only by `python -m drift approve`.\n"
 )
 
 REQUIRED = ("id", "layer", "layer_name", "tool", "claim", "status", "source_type", "source_url")
@@ -64,11 +73,12 @@ RECEIPT_KEYS = ("source_type", "source_url", "locator", "excerpt_chars", "redire
 REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash",
                "review_fetched_at", "review_event_hash")
 APPROVAL_KEYS = ("approved_by", "approved_at", "approval_ref")  # optional; written only by `drift approve`
+AI_ASSESSORS = frozenset({"claude", "claude-code"})  # `reviewed_by` values that name an AI assessor
 OWNER_LOGIN = "Double00kevin"  # the one GitHub account whose merge of a review PR counts as owner approval
 REPOSITORY = "Double00kevin/ai-security-architecture-map"
 APPROVAL_REF_RE = re.compile(r"https://github\.com/" + re.escape(REPOSITORY) + r"/pull/[1-9][0-9]*")
 AUTO_KEYS = ("auto_checked_at", "auto_check_basis", "auto_check_hash")
-HUMAN_REVIEW_MAX_DAYS = 180  # an automated re-check never carries a person's review further than this
+REVIEW_MAX_DAYS = 180  # an automated re-check never carries a review further than this
 LEGACY_KEYS = ("last_checked", "checked_by")  # replaced by fetched_at; never a review
 ID_RE = re.compile(r"L(\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*")
 HASH_RE = re.compile(r"sha256:[0-9a-f]{64}")
@@ -234,7 +244,7 @@ def review_state(c: dict) -> str:
 def auto_state(c: dict) -> str:
     """'missing', 'void' or 'valid' for the automated re-check. Valid only when it matches the current
     evidence and fetch dates, the review event it carries is intact, the claim is unchanged since that
-    `supported` review, and the review was at most HUMAN_REVIEW_MAX_DAYS old when the re-check was made."""
+    `supported` review, and the review was at most REVIEW_MAX_DAYS old when the re-check was made."""
     if not c.get("auto_check_hash"):
         return "missing"
     try:
@@ -251,14 +261,15 @@ def auto_state(c: dict) -> str:
         gap = (_date(c["auto_checked_at"]) - _date(c["reviewed_at"])).days
     except (TypeError, ValueError, KeyError):
         return "void"
-    return "valid" if 0 <= gap <= HUMAN_REVIEW_MAX_DAYS else "void"
+    return "valid" if 0 <= gap <= REVIEW_MAX_DAYS else "void"
 
 
 def last_check(c: dict) -> tuple[dt.date | None, str | None]:
-    """The newest valid check behind a claim and who made it: ('person' review or 'auto' re-check)."""
+    """The newest valid check behind a claim and what kind it was: ('review', an AI-assessed review
+    recorded by `drift review`) or ('auto', an automated re-check by `drift auto`)."""
     best: tuple[dt.date | None, str | None] = (None, None)
     if review_state(c) == "valid" and c.get("review_outcome") == "supported":
-        best = (_date(c["reviewed_at"]), "person")
+        best = (_date(c["reviewed_at"]), "review")
     if auto_state(c) == "valid":
         d = _date(c["auto_checked_at"])
         if best[0] is None or d > best[0]:
@@ -532,7 +543,7 @@ def select(claims: list[dict], *, ids: list[str] | None = None, layer: int | Non
 
 
 def review_age_days(c: dict, today: dt.date) -> int | None:
-    """Days since the newest valid check (a person's supported review or a valid automated re-check).
+    """Days since the newest valid check (a supported review or a valid automated re-check).
     None when there is none."""
     d, _ = last_check(c)
     return None if d is None else (today - d).days
