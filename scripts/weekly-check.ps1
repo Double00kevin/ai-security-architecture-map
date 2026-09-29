@@ -29,7 +29,7 @@
     $a = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "' + (Resolve-Path .\scripts\weekly-check.ps1) + '"')
     $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday -At 8:00am
     $s = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
-    Register-ScheduledTask -TaskName 'ai-architecture-map weekly drift check' -Action $a -Trigger $t -Settings $s -Description 'Weekly drift check for the 12-layer AI architecture map (github.com/Double00kevin/ai-architecture-map)'
+    Register-ScheduledTask -TaskName 'ai-architecture-map weekly drift check' -Action $a -Trigger $t -Settings $s -Description 'Weekly drift check for the 12-layer AI architecture map (github.com/Double00kevin/ai-security-architecture-map)'
 #>
 
 $ErrorActionPreference = 'Continue'
