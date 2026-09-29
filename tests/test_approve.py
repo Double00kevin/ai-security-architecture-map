@@ -174,3 +174,35 @@ def test_fetch_pr_uses_the_token_without_printing_it(monkeypatch, capsys):
     assert AP.fetch_pr(N) == {"number": N}
     assert seen["url"] == f"https://api.github.com/repos/{R.REPOSITORY}/pulls/{N}" and seen["timeout"] == AP.TIMEOUT_S
     assert seen["auth"] == f"Bearer {fake_token}" and fake_token not in capsys.readouterr().out
+
+
+def test_token_is_never_forwarded_on_a_redirect(monkeypatch):
+    """urllib copies ordinary headers onto a redirected request; the token must be an unredirected header."""
+    captured = {}
+
+    def fake(req, timeout):
+        captured["req"] = req
+        raise OSError("stop")
+
+    monkeypatch.setenv("GITHUB_TOKEN", "t" * 12)
+    monkeypatch.setattr(AP.urllib.request, "urlopen", fake)
+    with pytest.raises(AP.ApprovalError):
+        AP.fetch_pr(N)
+    req = captured["req"]
+    assert "Authorization" not in req.headers and req.unredirected_hdrs.get("Authorization") == "Bearer " + "t" * 12
+
+
+def test_a_non_object_api_response_is_refused(monkeypatch):
+    class Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self, n):
+            return b"[1, 2]"
+
+    monkeypatch.setattr(AP.urllib.request, "urlopen", lambda req, timeout: Resp())
+    with pytest.raises(AP.ApprovalError, match="not a pull request object"):
+        AP.fetch_pr(N)

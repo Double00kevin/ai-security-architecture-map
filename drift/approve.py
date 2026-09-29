@@ -59,7 +59,7 @@ def fetch_pr(number: int) -> dict:
         "User-Agent": "ai-security-architecture-map-approve"})
     token = os.environ.get("GITHUB_TOKEN")
     if token:
-        req.add_header("Authorization", f"Bearer {token}")
+        req.add_unredirected_header("Authorization", f"Bearer {token}")  # never sent on to a redirect target
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
             body = resp.read(MAX_BYTES + 1)
@@ -67,7 +67,10 @@ def fetch_pr(number: int) -> dict:
         raise ApprovalError(f"GitHub API request for PR {number} failed: {type(e).__name__}: {str(e)[:200]}") from None
     if len(body) > MAX_BYTES:
         raise ApprovalError("GitHub API response too large")
-    return json.loads(body.decode("utf-8"))
+    pr = json.loads(body.decode("utf-8"))
+    if not isinstance(pr, dict):
+        raise ApprovalError("GitHub API response is not a pull request object")
+    return pr
 
 
 def _git_show(repo_dir: Path, rev: str, path: str) -> str:
