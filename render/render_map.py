@@ -64,6 +64,7 @@ HEADER_Y = 292
 TITLE_Y = 64
 SUBTITLE_Y = 186
 FOOT = (84, 2362, 2076, 2444)
+SCOPE_Y, SCOPE_SIZE = 2466, 26  # scope note between the governance footer and the CTA; never shrunk
 CTA_Y = 2522
 VERSION_Y = 2604  # version / review line under the CTA; its text must stay above H - SAFE_MARGIN
 SAFE_MARGIN = 48  # no text pixel may land closer than this to the canvas edge
@@ -289,6 +290,11 @@ def render(m: dict, skip: frozenset[str] = frozenset()) -> Canvas:
         c.text("gov", (gx, fy - f_g.size * 0.68), gov, f_g, FOOT_TEXT)
         for g in m["governance"]:
             c.drawn.append(g.get("short") or g["name"])
+
+    # scope note: what the poster is not (drawn at its design size; a test fails if it would not fit)
+    note = copy.get("scope_note", "")
+    if note:
+        c.text("scope", (MARGIN_L, SCOPE_Y), note, font("Inter-Regular.ttf", SCOPE_SIZE), MUTED)
 
     # CTA + handle: the handle is right-aligned; the CTA must end before it
     handle = copy.get("handle", "")

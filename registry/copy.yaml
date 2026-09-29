@@ -2,7 +2,8 @@
 copy:
   title: "The AI Architecture Map"
   title_accent: "Build it. Secure it."
-  subtitle: "12 layers every AI build runs on, the tools for each, and the security control none of them should ship without."
+  subtitle: "12 capability areas an AI build can draw on, example tools for each, and one security control to start with."
+  scope_note: "Illustrative. Not an endorsement or a complete security baseline."
   column_layer: "LAYER"
   column_tools: "TOOLS"
   column_control: "SECURITY CONTROL"
@@ -11,5 +12,5 @@ copy:
   cta_accent: "Security is a layer-by-layer job."
   handle: "@00Kevin"
   repo: "github.com/Double00kevin/ai-security-architecture-map"
-  video_hook: "Production AI runs on 12 layers."
-  video_hook_accent: "Every one is an attack surface."
+  video_hook: "An AI build can touch up to 12 layers."
+  video_hook_accent: "Every one you use is an attack surface."

@@ -227,3 +227,37 @@ def test_schema_2_maps_keep_their_published_wording():
     m = mini_map()
     m.update(schema_version=2, oldest_review="2026-09-28", expires="2026-10-28")
     assert "oldest review 2026-09-28 · review due 2026-10-28" in RM.version_line(m)
+
+
+# ---- A17 (2026-09-29 audit): the poster says what it is, and what it is not ----
+
+def test_copy_is_scoped_as_capability_areas_not_a_universal_stack():
+    copy = M.load_copy()
+    assert copy["subtitle"] == ("12 capability areas an AI build can draw on, example tools for each, "
+                                "and one security control to start with.")
+    assert copy["video_hook"] == "An AI build can touch up to 12 layers."
+    assert copy["video_hook_accent"] == "Every one you use is an attack surface."
+    assert copy["scope_note"] == "Illustrative. Not an endorsement or a complete security baseline."
+    text = " ".join(copy.values()).lower()
+    assert "every ai build runs on" not in text and "production ai runs on" not in text
+
+
+def test_png_draws_the_scope_note_at_its_design_size_between_footer_and_cta():
+    m = mini_map()
+    c = RM.render(m)
+    assert m["copy"]["scope_note"] in c.drawn
+    (box,) = [b for k, b in c.runs if k == "scope"]
+    (cta,) = [b for k, b in c.runs if k == "cta"]
+    assert RM.FOOT[3] < box[1] and box[3] < cta[1]
+    assert box[2] <= RM.MARGIN_R
+    assert RM.fit_font(m["copy"]["scope_note"], "Inter-Regular.ttf", RM.SCOPE_SIZE, RM.MARGIN_R - RM.MARGIN_L,
+                       min_size=RM.SCOPE_SIZE).size == RM.SCOPE_SIZE  # fits without shrinking
+
+
+@pytest.mark.parametrize("size", [(1080, 1350), (1080, 1920)], ids=["4x5", "9x16"])
+def test_video_end_card_draws_the_scope_note(size):
+    import render_video as RV
+    m = mini_map()
+    sc = RV.Scene(*size, [])
+    sc.outro(3.9, RV.video_copy(m), m)
+    assert any(k.startswith("scope.") for k, _ in sc.runs)
