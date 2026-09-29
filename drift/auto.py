@@ -90,6 +90,9 @@ def decide(c: dict, findings: list[dict], today: dt.date) -> tuple[bool, str]:
         return False, f"human review is {age} days old (limit {registry.HUMAN_REVIEW_MAX_DAYS}): periodic review due"
     if registry.integrity_problems(c):
         return False, "stored evidence does not match its digest"
+    stale = registry.review_fetch_problems(c)
+    if stale:
+        return False, "the review rests on stale evidence: " + "; ".join(stale)
     if registry.review_state(c) != "valid" and registry.auto_state(c) != "valid":
         return False, "stored evidence has no valid review chain; a person must review it"
     if age < 0:

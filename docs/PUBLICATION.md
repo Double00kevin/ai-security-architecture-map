@@ -10,6 +10,21 @@ snapshot can break both. An unchanged response on the next run cannot repair tha
 must read the new evidence and record a review. Source type, locator, excerpt length and approved
 redirect are part of the binding as well as the URL and evidence digest.
 
+## Evidence freshness at review time
+
+A review assesses evidence, so the evidence must be fresh when it is assessed. `drift review` refuses
+unless every receipt's `fetched_at` is on the review date or at most `REVIEW_FETCH_MAX_DAYS` (7) days
+before it, and never after it (`drift/registry.py`, next to the other policy constants). The fetch
+dates are recorded in the review event (`review_fetched_at`), and `publishable` applies the same rule
+to every review-based check, so a hand-written record over a 2020 fetch cannot publish or be carried
+forward by an automated re-check. Re-taking evidence with `drift snapshot` changes the fetch dates and
+therefore always needs a new review, even when the excerpt is unchanged.
+
+Automated re-checks already use fresh evidence: `drift auto` renews a claim only from the excerpts
+fetched by the same weekly `drift check` run, and records that run's date as every receipt's
+`fetched_at`. There is no evidence policy yet for stable historical facts whose source cannot be
+re-fetched; see `DEFERRED.md`.
+
 The 180-day rule limits the age of the human review **when an automatic check is made**. An accepted
 check can support a publication for up to 30 more days. It is not a hard 180-day lifetime for the map.
 

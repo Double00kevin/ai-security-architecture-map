@@ -181,7 +181,8 @@ def test_publishes_a_new_version_when_the_published_one_is_close_to_its_deadline
 
 def test_publishes_a_new_version_when_a_reviewed_change_alters_what_readers_see(world):
     c = world["claims"][0]
-    c.update(owner="BigCo", assertions=["availability", "ownership"], supports=["availability", "ownership"])
+    c.update(owner="BigCo", assertions=["availability", "ownership"], supports=["availability", "ownership"],
+             fetched_at=TODAY.isoformat())  # re-taken before the review, as `drift snapshot` would
     review.record(c, "supported", "tester", TODAY)
     R.save(world["claims"], world["reg"])
     code, out, _ = run(world, [finding(x) for x in world["claims"]])

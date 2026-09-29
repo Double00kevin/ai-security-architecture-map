@@ -17,7 +17,7 @@ def mini_claims(reviewed_on="2026-09-27"):
     for layer, n in enumerate(R.LAYER_COUNTS, start=1):
         for k in range(n):
             c = claim(id=f"L{layer:02d}-t{k}", layer=layer, layer_name=f"Layer {layer}", tool=f"Tool {layer}.{k}",
-                      last_version="1.0", fetched_at="2026-09-27")
+                      last_version="1.0", fetched_at=reviewed_on or "2026-09-27")  # evidence fetched on review day
             out.append(reviewed(c, when=reviewed_on) if reviewed_on else c)
     return out
 
@@ -139,6 +139,7 @@ def test_build_refuses_claims_last_seen_in_2020_without_review(tmp_path, capsys)
 
 def test_old_review_expires_the_map_even_with_a_fresh_version(tmp_path):
     claims = mini_claims(reviewed_on="2026-09-27")
+    claims[5]["fetched_at"] = "2026-09-01"
     reviewed(claims[5], when="2026-09-01")  # one old review drags expiry forward
     m = M.build_map(claims, CTL, "v2026.09.28")
     assert m["expires"] == "2026-10-01" and m["oldest_review"] == "2026-09-01"

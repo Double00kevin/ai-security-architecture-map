@@ -331,3 +331,39 @@ def test_migration_cannot_extend_review_age(tmp_path):
 def test_every_committed_review_record_has_a_valid_event():
     for c in R.load():
         assert c.get("review_event_hash") and R.review_event_intact(c), c["id"]
+
+
+# ---- A04 (2026-09-29 audit): a review must rest on a fresh fetch ----
+
+def test_review_of_a_2020_fetch_is_refused_at_review_time():
+    c = claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x"), fetched_at="2020-01-01",
+              assertions=["availability"], supports=["availability"])
+    for outcome in R.REVIEW_OUTCOMES:
+        with pytest.raises(R.RegistryError, match="fetched 2020-01-01"):
+            _review.record(c, outcome, "claude-code", _dt.date(2026, 9, 29))
+    assert R.review_state(c) == "missing"
+
+
+def test_review_of_a_2020_fetch_is_refused_at_publish_time(tmp_path):
+    """The same record written by hand (hashes recomputed) cannot publish or be carried forward."""
+    c = reviewed(claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x"), fetched_at="2020-01-01"), when="2026-09-29")
+    assert R.review_state(c) == "valid"
+    assert any("fetched 2020-01-01" in w for w in R.publishable(c)), R.publishable(c)
+    ok, why = _A.decide(c, [{"id": c["id"], "receipt": 0, "reasons": [], "old_hash": c["snapshot_hash"],
+                              "new_hash": c["snapshot_hash"], "new_excerpt": c["snapshot"]}], _dt.date(2026, 9, 30))
+    assert not ok and "fetched 2020-01-01" in why
+
+
+@pytest.mark.parametrize("fetched,ok", [("2026-09-22", True), ("2026-09-21", False), ("2026-09-29", True),
+                                        ("2026-09-30", False)])
+def test_fetch_window_is_seven_days_before_the_review_and_never_after(fetched, ok):
+    assert R.REVIEW_FETCH_MAX_DAYS == 7
+    c = claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x"), fetched_at=fetched,
+              assertions=["availability"], supports=["availability"])
+    if ok:
+        _review.record(c, "supported", "claude-code", _dt.date(2026, 9, 29))
+        assert R.publishable(c) == []
+    else:
+        with pytest.raises(R.RegistryError, match="fetched"):
+            _review.record(c, "supported", "claude-code", _dt.date(2026, 9, 29))
+        assert R.publishable(reviewed(c, when="2026-09-29"))

@@ -48,6 +48,10 @@ def record(c: dict, outcome: str, by: str, when: dt.date) -> None:
         raise registry.RegistryError(f"{c['id']}: evidence does not match its digest; re-take it with "
                                      f"`drift snapshot --id {c['id']}` and read it first: {'; '.join(bad)}")
     e = _event(c, outcome, by, when)
+    stale = registry.review_fetch_problems(e)
+    if stale:
+        raise registry.RegistryError(f"{c['id']}: evidence must be fetched on the review date or at most "
+                                     f"{registry.REVIEW_FETCH_MAX_DAYS} days before it: {'; '.join(stale)}")
     if outcome == "supported":
         gaps = registry.publishable(_event(c, "supported", by, when))
         if gaps:

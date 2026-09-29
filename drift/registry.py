@@ -49,6 +49,7 @@ OWNERSHIP_KINDS = frozenset({"acquisition_completed", "acquisition_agreed", "mer
 LAYERS = range(1, 13)
 LAYER_COUNTS = [10, 5, 6, 5, 5, 7, 5, 5, 5, 6, 5, 5]  # map v2 (v2026.09.27.1); v2026.09.26 was 7,4,5,5,4,6,5,5,5,6,5,5
 STALE_DAYS = 30  # house rule: no review or version is trusted past 30 days
+REVIEW_FETCH_MAX_DAYS = 7  # a review assesses evidence fetched on or at most this many days before it
 
 HEADER = (
     "# Claim registry for the 12-layer AI architecture map.\n"
@@ -223,7 +224,7 @@ def auto_state(c: dict) -> str:
             return "void"
     except ValueError:
         return "void"
-    if not review_event_intact(c):
+    if not review_event_intact(c) or review_fetch_problems(c):
         return "void"
     if c.get("review_outcome") != "supported" or not c.get("review_claim_hash") \
             or c["review_claim_hash"] != claim_hash(c):
@@ -245,6 +246,36 @@ def last_check(c: dict) -> tuple[dt.date | None, str | None]:
         if best[0] is None or d > best[0]:
             best = (d, "auto")
     return best
+
+
+def fetch_window_problems(fetched: list, reviewed_at) -> list[str]:
+    """Receipts whose fetch date is after the review date or more than REVIEW_FETCH_MAX_DAYS before it.
+    A receipt with no fetch date and nothing fetched (None) has nothing to assess and is skipped."""
+    out = []
+    try:
+        day = _date(reviewed_at)
+    except ValueError:
+        return ["review date is not YYYY-MM-DD"]
+    for i, f in enumerate(fetched):
+        try:
+            d = _date(f)
+        except ValueError:
+            out.append(f"receipt {i}: fetch date {f!r} is not YYYY-MM-DD")
+            continue
+        if d is None or day is None:
+            continue
+        gap = (day - d).days
+        if gap < 0:
+            out.append(f"receipt {i} was fetched {d} (after the review on {day})")
+        elif gap > REVIEW_FETCH_MAX_DAYS:
+            out.append(f"receipt {i} was fetched {d}, {gap} days before the review on {day} "
+                       f"(limit {REVIEW_FETCH_MAX_DAYS}); re-take it with `drift snapshot` and review again")
+    return out
+
+
+def review_fetch_problems(c: dict) -> list[str]:
+    """The fetch-window rule applied to the fetch dates the review event recorded."""
+    return fetch_window_problems(list(c.get("review_fetched_at") or []), c.get("reviewed_at"))
 
 
 def uncovered_assertions(c: dict) -> list[str]:
@@ -272,6 +303,7 @@ def publishable(c: dict) -> list[str]:
     if state == "valid":
         if c.get("review_outcome") != "supported":
             why.append(f"review outcome is {c.get('review_outcome')!r}, not 'supported'")
+        why += review_fetch_problems(c)
     elif auto_state(c) != "valid":
         why.append(f"review {state}" + ("" if state == "missing" else " and no valid automated re-check"))
     return why
