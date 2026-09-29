@@ -1,0 +1,15 @@
+# Words on the map that are not tools or controls. Versioned with the map.
+copy:
+  title: "The AI Architecture Map"
+  title_accent: "Build it. Secure it."
+  subtitle: "12 layers every AI build runs on, the tools for each, and the security control none of them should ship without."
+  column_layer: "LAYER"
+  column_tools: "TOOLS"
+  column_control: "SECURITY CONTROL"
+  governance_label: "GOVERN IT ALL"
+  cta: "Save this for your next build."
+  cta_accent: "Security is a layer-by-layer job."
+  handle: "@00Kevin"
+  repo: "github.com/Double00kevin/ai-security-architecture-map"
+  video_hook: "Production AI runs on 12 layers."
+  video_hook_accent: "Every one is an attack surface."

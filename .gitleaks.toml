@@ -1,0 +1,7 @@
+# gitleaks configuration for ai-security-architecture-map
+# Uses the default ruleset unchanged. No allowlists: if a test needs a fake secret,
+# the test must build it at runtime rather than store it in the tree.
+title = "ai-security-architecture-map"
+
+[extend]
+useDefault = true

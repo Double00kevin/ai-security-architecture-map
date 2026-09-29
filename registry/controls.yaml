@@ -1,0 +1,41 @@
+# The 12 security controls on the map, one per layer. These are the owner's guidance, not vendor facts:
+# they are versioned and changelogged here but never drift-checked.
+# Layer 1 wording ("with a named owner") was suggested publicly by @tonytonggg: a pin with no owner
+# freezes you on old bugs.
+controls:
+- layer: 1
+  name: Models & Hosting
+  control: Zero-retention terms, pinned versions with a named owner, no public inference ports
+- layer: 2
+  name: AI Gateway
+  control: Central auth, rate limits, spend caps, PII redaction
+- layer: 3
+  name: Orchestration & Agents
+  control: Step/budget limits, human approval for irreversible actions
+- layer: 4
+  name: Tools & MCP
+  control: Least-privilege scopes, allowlists, vetted servers + skills
+- layer: 5
+  name: Ingestion
+  control: Sanitize inputs, tag source + trust level on every chunk
+- layer: 6
+  name: Embeddings & Vector DB
+  control: Classify vectors like source data, ACL filters at query time
+- layer: 7
+  name: Retrieval (RAG)
+  control: Retrieved text = untrusted input, never instructions
+- layer: 8
+  name: Memory
+  control: Validate writes, TTLs, user-visible + deletable memory
+- layer: 9
+  name: Guardrails
+  control: Defense in depth. Assume filters get bypassed
+- layer: 10
+  name: Evals & Red Team
+  control: Adversarial evals gate every deploy
+- layer: 11
+  name: Observability
+  control: Audit every tool call; redact + restrict the logs
+- layer: 12
+  name: Automation
+  control: Vaulted secrets, signed webhooks, named owners

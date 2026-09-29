@@ -1,0 +1,111 @@
+Models & Hosting
+Zero-retention terms, pinned versions with a named owner, no public inference ports
+Claude
+GPT
+Gemini
+Llama
+Mistral
+Qwen
+DeepSeek
+Bedrock
+vLLM
+Ollama
+AI Gateway
+Central auth, rate limits, spend caps, PII redaction
+LiteLLM
+Prisma AIRS (Portkey)
+OpenRouter
+Cloudflare AI Gateway
+Kong
+Orchestration & Agents
+Step/budget limits, human approval for irreversible actions
+LangGraph
+Claude Agent SDK
+OpenAI Agents SDK
+Google ADK
+CrewAI
+Microsoft Agent Framework
+Tools & MCP
+Least-privilege scopes, allowlists, vetted servers + skills
+MCP
+Agent Skills
+FastMCP
+Composio
+Arcade
+Ingestion
+Sanitize inputs, tag source + trust level on every chunk
+Unstructured
+Docling
+LlamaParse
+Firecrawl
+Airbyte
+Embeddings & Vector DB
+Classify vectors like source data, ACL filters at query time
+Voyage
+Cohere
+BGE
+pgvector
+Pinecone
+Qdrant
+Weaviate
+Retrieval (RAG)
+Retrieved text = untrusted input, never instructions
+LlamaIndex
+LangChain
+Haystack
+GraphRAG
+Cohere Rerank
+Memory
+Validate writes, TTLs, user-visible + deletable memory
+Mem0
+Zep
+Redis
+Neo4j
+Weaviate Engram
+Guardrails
+Defense in depth. Assume filters get bypassed
+NeMo Guardrails
+Llama Guard
+LlamaFirewall
+Presidio
+Check Point AI Guardrails
+Evals & Red Team
+Adversarial evals gate every deploy
+promptfoo
+DeepEval
+Braintrust
+Inspect
+garak
+PyRIT
+Observability
+Audit every tool call; redact + restrict the logs
+Langfuse
+LangSmith
+Arize Phoenix
+MLflow
+OpenTelemetry
+Automation
+Vaulted secrets, signed webhooks, named owners
+n8n
+Temporal
+Airflow
+Prefect
+Make
+The AI Architecture Map
+Build it. Secure it.
+12 layers every AI build runs on, the tools for each, and the security control none of them should ship without.
+LAYER
+TOOLS
+SECURITY CONTROL
+GOVERN IT ALL
+Save this for your next build.
+Security is a layer-by-layer job.
+@00Kevin
+Production AI runs on 12 layers.
+Every one is an attack surface.
+map v2026.09.27.1 · verified 2026-09-27 · trust until 2026-10-27
+OWASP LLM Top 10 (2026)
+OWASP Agentic Top 10
+NIST AI RMF
+ISO/IEC 42001
+MITRE ATLAS

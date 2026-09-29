@@ -1,0 +1,40 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Local run state (logs may contain fetched content; reports are committed separately on purpose)
+logs/
+*.log
+.cache/
+drift/.state/
+
+# Rendering intermediates
+render/out/
+*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Internal planning docs (roadmap, progress log, decisions). Kept locally and in the owner's notes, not published.
+_internal/

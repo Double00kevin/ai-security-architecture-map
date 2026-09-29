@@ -1,0 +1,53 @@
+name: Claim is stale or wrong
+description: A tool on the map was renamed, acquired, deprecated, shut down, or is in the wrong layer.
+title: "[claim] <tool>: <what changed>"
+labels: ["claim"]
+body:
+  - type: input
+    id: claim_id
+    attributes:
+      label: Claim id or tool name
+      description: From registry/claims.yaml, e.g. L02-litellm, or just the tool name as it appears on the map.
+      placeholder: L02-litellm
+    validations:
+      required: true
+  - type: dropdown
+    id: change
+    attributes:
+      label: What changed
+      options:
+        - renamed
+        - acquired
+        - deprecated / maintenance mode
+        - dead / shut down
+        - wrong layer
+        - other factual error
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: Primary source URL (required)
+      description: The vendor's own docs, changelog, blog or press release, the official GitHub org, or the package registry. Aggregators and AI answers are leads, not proof.
+      placeholder: https://
+    validations:
+      required: true
+  - type: textarea
+    id: quote
+    attributes:
+      label: The sentence on that page that proves it
+      description: Paste the exact excerpt (a line or two). It becomes the new evidence snapshot if the claim is updated.
+    validations:
+      required: true
+  - type: input
+    id: seen_on
+    attributes:
+      label: Date you checked the source
+      placeholder: 2026-10-03
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Suggested new wording, replacement tool, or context.

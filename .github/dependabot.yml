@@ -1,0 +1,22 @@
+# Layer 01 control applied to this repo: pinned versions with a named owner who moves them forward.
+# Dependabot proposes; the owner (Double00kevin) reviews and merges.
+version: 2
+updates:
+  # pip: security alerts only. Version bumps are done by hand with
+  # `uv pip compile --universal --generate-hashes` because Dependabot's pip
+  # updater rewrites the universal lockfile without platform markers.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+    open-pull-requests-limit: 0
+    assignees:
+      - "Double00kevin"
+    labels:
+      - "dependencies"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"

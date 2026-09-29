@@ -1,0 +1,76 @@
+# The "build": tests must pass on Linux and Windows (Python 3.11 and 3.13), the newest map must not be
+# expired, and the committed generated files must match a rebuild from their inputs.
+# No secrets, no network beyond package installs (tests use an in-memory fake of urlopen and a global
+# guard that fails any test opening a real socket).
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 13 * * 1"   # Mondays 13:17 UTC: catches an expired map even when nothing was pushed
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --require-hashes -r requirements.txt -r requirements-dev.txt
+      - run: python -m pytest
+      - run: python -m drift map check
+      - name: Generated files match a rebuild (map.json, MAP.md, README block, PNG sidecar)
+        run: python -m drift map verify
+  weekly-script:
+    # scripts/weekly-check.ps1 end to end (fake python, local bare origin) under the PowerShell that runs
+    # it in production: Windows PowerShell 5.1 with the standard alias table. Also pwsh on both OSes.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, shell: powershell }
+          - { os: windows-latest, shell: pwsh }
+          - { os: ubuntu-latest, shell: pwsh }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}   # expressions are allowed here, not in steps[*].shell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Weekly job harness (${{ matrix.shell }})
+        run: ./tests/weekly/harness.ps1
+  gitleaks:
+    # The gitleaks CLI over the full clone, every branch and tag: "CI scans the full history" is literal.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      # sha256 of gitleaks_8.30.1_linux_x64.tar.gz, from gitleaks_8.30.1_checksums.txt on the v8.30.1 release
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (pinned version, checksum verified)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+      - name: Scan the full history
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --config .gitleaks.toml --log-opts="--all" .

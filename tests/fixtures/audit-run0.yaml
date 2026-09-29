@@ -1,0 +1,72 @@
+# Fixture registry modelled on the run #0 audit shapes (renamed, acquired, deprecated, dead) plus
+# one clean claim. Hosts use the reserved .invalid TLD, so nothing here can ever be fetched for real;
+# tests serve these URLs from memory. No real tokens or secrets appear in fixtures, ever.
+claims:
+- id: L03-autogen
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: AutoGen
+  claim: AutoGen is in maintenance mode
+  status: deprecated
+  source_type: page_section
+  source_url: https://fixtures.invalid/autogen
+  locator: maintenance mode
+  excerpt_chars: 60
+  snapshot: "maintenance mode: no new features"
+  snapshot_hash: sha256:placeholder-replaced-by-test
+  last_version: null
+  fetched_at: 2026-09-27
+- id: L03-windsurf
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: Windsurf
+  claim: Windsurf was renamed Devin Desktop
+  status: renamed
+  source_type: page_section
+  source_url: https://fixtures.invalid/windsurf
+  locator: Devin Desktop
+  excerpt_chars: 60
+  snapshot: "Devin Desktop (formerly Windsurf)"
+  snapshot_hash: sha256:placeholder-replaced-by-test
+  last_version: null
+  fetched_at: 2026-09-27
+- id: L01-sora
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Sora
+  claim: Sora was shut down
+  status: dead
+  source_type: page_section
+  source_url: https://fixtures.invalid/sora
+  locator: shut down
+  excerpt_chars: 60
+  snapshot: "shut down on 2026-06-30"
+  snapshot_hash: sha256:placeholder-replaced-by-test
+  last_version: null
+  fetched_at: 2026-08-01
+- id: L02-portkey
+  layer: 2
+  layer_name: AI Gateway
+  tool: Portkey
+  claim: Portkey was acquired
+  status: acquired
+  source_type: github_release
+  source_url: https://github.com/fixture-org/portkey-gateway
+  locator: null
+  snapshot: "fixture-org/portkey-gateway latest release v1.0.0"
+  snapshot_hash: sha256:placeholder-replaced-by-test
+  last_version: v1.0.0
+  fetched_at: 2026-09-27
+- id: L10-clean
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: CleanTool
+  claim: CleanTool is active
+  status: active
+  source_type: pypi
+  source_url: https://pypi.org/project/fixture-cleantool/
+  locator: null
+  snapshot: "pypi fixture-cleantool 3.0.0 uploaded 2026-09-20: Clean"
+  snapshot_hash: sha256:placeholder-replaced-by-test
+  last_version: 3.0.0
+  fetched_at: 2026-09-27

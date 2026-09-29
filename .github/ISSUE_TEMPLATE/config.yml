@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue
+    url: https://github.com/Double00kevin/ai-security-architecture-map/security/advisories/new
+    about: Report privately via GitHub's vulnerability reporting, not in a public issue.
+  - name: Suggest a tool for the map
+    url: https://github.com/Double00kevin/ai-security-architecture-map/issues/new?labels=candidate&title=%5Bcandidate%5D%20%3Ctool%3E
+    about: New tools enter as verified candidates first; open an issue with a primary source.

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Pre-commit hook: block any commit that contains a secret.
+# Installed with:  git config core.hooksPath .githooks
+# Requires gitleaks v8.x on PATH: https://github.com/gitleaks/gitleaks
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found on PATH. Install it, then retry. Refusing to commit unscanned." >&2
+  exit 1
+fi
+
+# Scan only what is staged for this commit.
+if ! gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml; then
+  echo "" >&2
+  echo "pre-commit: gitleaks found a possible secret in the staged changes. Commit blocked." >&2
+  echo "Remove the secret (put it in .env, which is gitignored), then commit again." >&2
+  exit 1
+fi

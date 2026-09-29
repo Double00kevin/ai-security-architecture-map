@@ -1,0 +1,2732 @@
+# Claim registry for the 12-layer AI architecture map.
+# One record per tool per layer. claim/status/owner/assertions/supports are edited by hand after
+# reading the source; snapshot fields and fetched_at are written by `python -m drift snapshot`;
+# the review record (reviewed_*, review_*) is written only by a person via `python -m drift review`.
+claims:
+- id: L01-claude
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Claude
+  claim: Claude is an actively offered model family developed by Anthropic; the docs list the current
+    lineup
+  status: active
+  owner: Anthropic
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - ownership
+  source_type: page_section
+  source_url: https://platform.claude.com/docs/en/models/overview.md
+  locator: Claude is a family of state-of-the-art large language models developed by Anthropic
+  excerpt_chars: 240
+  snapshot: 'Claude is a family of state-of-the-art large language models developed by Anthropic. This
+    guide introduces the available models and compares their performance. --- # Models overview Claude
+    is a family of state-of-the-art large language mode'
+  snapshot_hash: sha256:7dec42c3fae58dbcfab1244f92dd390c61b54d231a7913b99720cfdde06f58fa
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - ownership
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:53965c5427b1e128e23868439619485033039499a7f6bc4d1bacf706f27a5c4a
+  review_claim_hash: sha256:e69513e09df97aa77fed39b65b7cfc625e1950a60bab39681a8760f88b5d334c
+- id: L01-gpt
+  layer: 1
+  layer_name: Models & Hosting
+  tool: GPT
+  claim: GPT is an actively offered model family; the API docs at developers.openai.com list current flagship
+    models
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  source_type: page_section
+  source_url: https://developers.openai.com/api/docs/models
+  locator: Flagship models Start with
+  excerpt_chars: 240
+  snapshot: Flagship models Start with GPT-6 Astra for complex reasoning and coding, choose GPT-6 Sol
+    to balance intelligence and cost, or use GPT-6 Luna for cost-sensitive, high-volume workloads. View
+    all Compare models Astra GPT-6 Astra Our most capa
+  snapshot_hash: sha256:98f5c76ff1bb063362628ef59307d47103470cd8898ce5ae1118bd0a5a15996b
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:2cd1acb34c09a33cac92cbe634fc728e6b4cc7a79cd5859ecfef3c21ef0e2edb
+  review_claim_hash: sha256:9d42c0e40902a3a30220828cedcaaa954aeeafad508dd986b50c7ad0f36daf83
+- id: L01-gemini
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Gemini
+  claim: Gemini models are actively offered through the Gemini Developer API, which Google's Gen AI Python
+    SDK supports
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  - lifecycle
+  source_type: page_section
+  source_url: https://raw.githubusercontent.com/googleapis/python-genai/main/README.md
+  locator: Google Gen AI Python SDK provides an interface
+  excerpt_chars: 260
+  snapshot: Google Gen AI Python SDK provides an interface for developers to integrate Google's generative
+    models into their Python applications. It supports the [Gemini Developer API](https://ai.google.dev/gemini-api/docs)
+    and [Gemini Enterprise Agent Platform](https://d
+  snapshot_hash: sha256:9509f56c0a7fcda8556a654f2ca981e14615be9a73fc8fa79ab1c2def72532e2
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  sources:
+  - source_type: pypi
+    source_url: https://pypi.org/project/google-genai/
+    snapshot: 'pypi google-genai 2.25.0 uploaded 2026-09-22: GenAI Python SDK'
+    snapshot_hash: sha256:c7ad3e598609aebf085096cdae47bb99660c1fa0f833cd6542878eebda8922d9
+    last_version: 2.25.0
+    fetched_at: '2026-09-28'
+    supports:
+    - lifecycle
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/googleapis/python-genai/main/README.md
+    locator: model='gemini-[\w.-]+'
+    excerpt_chars: 0
+    snapshot: model='gemini-flash-latest'
+    snapshot_hash: sha256:c0b38e19cbb43e0d1088d48b82194a9c64faed716421f6e862dedc058f6c5398
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:40a3f3fa1b893b4685d5eb7afa5604e1405d6e51e8dfc66eb87055fe23ab3f28
+  review_claim_hash: sha256:d76aa1765525a6fda9802c464da1640ca42f919f6a88ef5d879d7577c699dc85
+- id: L01-llama
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Llama
+  claim: Llama is Meta's published, openly accessible large language model family
+  status: active
+  owner: Meta
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  - ownership
+  source_type: page_section
+  source_url: https://raw.githubusercontent.com/meta-llama/llama-models/main/README.md
+  locator: Llama is an accessible, open large language model
+  excerpt_chars: 400
+  snapshot: 'Llama is an accessible, open large language model (LLM) designed for developers, researchers,
+    and businesses to build, experiment, and responsibly scale their generative AI ideas. Part of a foundational
+    system, it serves as a bedrock for innovation in the global community. A few key aspects: 1. **Open
+    access**: Easy accessibility to cutting-edge large language models, fostering collaboration and a'
+  snapshot_hash: sha256:9f4b420582158db0b989ce377449845efb631cb33afee2e9dfc2efca1a04ce74
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/meta-llama/llama-models/main/models/llama4/MODEL_CARD.md
+    locator: '\*\*Model developer\*\*: Meta'
+    excerpt_chars: 0
+    snapshot: '**Model developer**: Meta'
+    snapshot_hash: sha256:9baf83a051a6d4337c81e9c934f83524e068caa4dde7f769089fb5c4c5e27c8e
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - ownership
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:9645c7f6f071af5ff4caa08e61a79fe9697341f2b81d5092523c61aa1fe4d9b3
+  review_claim_hash: sha256:9affb06dbe0176a99c0253a7409050c8d10b3c4739dd324262fd03b130ccbbc7
+- id: L01-mistral
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Mistral
+  claim: Mistral models are actively offered through the Mistral AI API; the Python SDK's README calls
+    models such as mistral-large-latest
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/mistralai/
+  locator: null
+  snapshot: 'pypi mistralai 3.0.0 uploaded 2026-09-28: Python Client SDK for the Mistral AI API.'
+  snapshot_hash: sha256:dc220b34a96fa0b759cefbf19cad063e2c11c0ee89399ac44ad3f50bfc130961
+  last_version: 3.0.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/mistralai/client-python/main/README.md
+    locator: mistral\.chat\.complete\(model="mistral-[\w.-]+"
+    excerpt_chars: 0
+    snapshot: mistral.chat.complete(model="mistral-large-latest"
+    snapshot_hash: sha256:b326225c5e99ecffb8ded5a33c69bb45d7958cd666f1ddb50b15f13bd69f7ed0
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:8aa13432347bc63089cf8316e332805de0bbeb87b4f877f6105314b5cf26bfb2
+  review_claim_hash: sha256:1bfe341fe979e45a0edf150725c3ef5a14e66574e22f20116c2dcbd2dfa5c4df
+- id: L01-qwen
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Qwen
+  claim: 'Qwen models are actively published: the Qwen organization''s most recently modified Hugging
+    Face model repository was updated within the last 30 days'
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  source_type: page_section
+  source_url: https://huggingface.co/api/models?author=Qwen&sort=lastModified&direction=-1&limit=1
+  locator: '"id":"Qwen/[^"]+","lastModified":"[^"]+"'
+  excerpt_chars: 0
+  snapshot: '"id":"Qwen/Qwen3Guard-Stream-4B","lastModified":"2026-09-27T02:00:18.000Z"'
+  snapshot_hash: sha256:f44658cdf5295e94c2cc1beb09f3d4cebf7eba0df557516ed96d5c023da64578
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:36220fb5bfe60688e41902dc361bcdb863a0004876cb9070d21a12030d758540
+  review_claim_hash: sha256:fcf8dd4d13090ae2472b12ae9fcbbfd7cb1dba74a1612716b8b6f61972ca0ca7
+- id: L01-deepseek
+  layer: 1
+  layer_name: Models & Hosting
+  tool: DeepSeek
+  claim: DeepSeek offers current models through its API; the pricing page lists the served model versions
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  source_type: page_section
+  source_url: https://api-docs.deepseek.com/quick_start/pricing/
+  locator: MODEL VERSION
+  excerpt_chars: 200
+  snapshot: 'MODEL VERSION DeepSeek-V4.1-Flash DeepSeek-V4-Pro-0813 THINKING MODE Supports both non-thinking
+    and thinking (default) modes See Thinking Mode for how to switch CONTEXT LENGTH 1M MAX OUTPUT MAXIMUM:
+    3'
+  snapshot_hash: sha256:29adee1ce7fba3019dbb270793548a4480a1c0a017acc2deb1e07fe9d8a4a4b8
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:79c602bca77502e0eba3565534f561e7f47ccc033793fd6df56ee16b228d2de7
+  review_claim_hash: sha256:46b431ef9b1e8addb9a238a7f10ae2d51f7d1bae321258bbb6527ec01150952f
+- id: L01-bedrock
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Bedrock
+  claim: Amazon Bedrock is an actively offered managed model-hosting service
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+  locator: Amazon Bedrock is a fully managed service
+  excerpt_chars: 200
+  snapshot: Amazon Bedrock is a fully managed service that provides secure, enterprise-grade access to
+    [high-performing foundation models](models.md) from leading AI companies, enabling you to build and
+    scale gen
+  snapshot_hash: sha256:755ae8388f303321c23cbb5169616c44b0a4ca5ce3476c1a68415d08f9d71d46
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:3aa033ac778ef2329efc56efd14ca1a8ab6713215a4101420e925b3e7ccec4d6
+  review_claim_hash: sha256:d896cbcafdec47a6a68ff6aabe538e875a3507f154596dee6578288a0b472901
+- id: L01-vllm
+  layer: 1
+  layer_name: Models & Hosting
+  tool: vLLM
+  claim: vLLM is an actively maintained inference and serving engine for LLMs
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/vllm-project/vllm
+  locator: null
+  snapshot: 'vllm-project/vllm latest release v0.30.0 published 2026-09-22T05:20:54Z | LIFECYCLE: release
+    v0.30.0 notes mention "deprecat": ...GPTQ activation ordering (`g_idx`) removed (#54809); items deprecated
+    for 0.29 removed, including the `VLLM_PREFIX_'
+  snapshot_hash: sha256:bbc017304a2ec62aa67b4ca2e8119b1f16992b1be1dae6b4de7605d67a5d602c
+  last_version: v0.30.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: pypi
+    source_url: https://pypi.org/project/vllm/
+    snapshot: 'pypi vllm 0.30.0 uploaded 2026-09-22: A high-throughput and memory-efficient inference
+      and serving engine for LLMs'
+    snapshot_hash: sha256:46a09dea68ccddf1d67b106d56048b1d14a5207d728dbc9d67f6368455563b20
+    last_version: 0.30.0
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+    - availability
+    - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:48f6870a8598575725a8ea2d01fb4748bc5051bcab88218a653605a81ff49edd
+  review_claim_hash: sha256:1e1522ba4dc5d38cdc0678eb6f17325ed15b14910827fbae294ff2bfc8cf88cd
+- id: L01-ollama
+  layer: 1
+  layer_name: Models & Hosting
+  tool: Ollama
+  claim: Ollama is actively maintained software for running and managing models, with a REST API
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/ollama/ollama
+  locator: null
+  snapshot: ollama/ollama latest release v0.34.4 published 2026-09-23T02:24:43Z
+  snapshot_hash: sha256:60de2dd38e5756e4a21d87210413e5e51996e15c33c93662a61ff8de7fd2ba0a
+  last_version: v0.34.4
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/ollama/ollama/main/README.md
+    locator: Ollama has a REST API for running and managing models
+    excerpt_chars: 0
+    snapshot: Ollama has a REST API for running and managing models
+    snapshot_hash: sha256:077612b966e45111ca495402fd0d6d92959f3677a3b499f010c5f66b3b8bdd5e
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:4bba22a49b28d98db79a8e168297e4db35eb7c47380185f25885bfea7181799e
+  review_claim_hash: sha256:17af4b9f874a44f90fa683deb342767702ff9ac0bc61ce73d4712f734d3da2d0
+- id: L02-litellm
+  layer: 2
+  layer_name: AI Gateway
+  tool: LiteLLM
+  claim: LiteLLM is an actively maintained open-source AI gateway
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/BerriAI/litellm
+  locator: null
+  snapshot: 'BerriAI/litellm latest release v1.103.0 published 2026-09-28T05:43:48Z | LIFECYCLE: release
+    v1.103.0 notes mention "deprecat": ...her AI, Fireworks and Vertex prices: 278 models, 59 new, 30
+    deprecated by @berriai-litellm-provider-info-sync[bot]'
+  snapshot_hash: sha256:7d122ce0f65948f990058ee16a280ad5c8164fb9e59eb50692370dc32347fbdd
+  last_version: v1.103.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/BerriAI/litellm/main/README.md
+    locator: Open Source AI Gateway for \d+\+ LLMs
+    excerpt_chars: 120
+    snapshot: Open Source AI Gateway for 100+ LLMs. Self-hosted. Enterprise-ready. Call any LLM in OpenAI
+      format.</p> <p align="center
+    snapshot_hash: sha256:c5e97beb26544eecfd1dba985d2ac0650e04e247fb62999ca44aa3d00d36b865
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:eb86f0098f6474e5fc39b0793dead6c1221845a3acf6b1f90b521f27bcf5c96a
+  review_claim_hash: sha256:e48d7899bfd9a273d3699118cac6a72b60d0f85a123b0a62bd2bb57b78bf846c
+- id: L02-prisma-airs-portkey
+  layer: 2
+  layer_name: AI Gateway
+  tool: Prisma AIRS (Portkey)
+  claim: Palo Alto Networks completed its acquisition of Portkey on 2026-05-29 and Portkey expands Prisma
+    AIRS; Portkey's AI Gateway (routing to LLMs through one API) remains published
+  status: active
+  owner: Palo Alto Networks
+  ownership_event:
+    kind: acquisition_completed
+    counterparty: Palo Alto Networks
+    date: '2026-05-29'
+    source_url: https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-acquisition-of-portkey-to-secure-ai-agents
+    note: 'Press release title: Palo Alto Networks Completes Acquisition of Portkey to Secure AI Agents.'
+  on_map: true
+  aliases:
+  - Portkey
+  assertions:
+  - ownership
+  - capability
+  - availability
+  source_type: page_section
+  source_url: https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-acquisition-of-portkey-to-secure-ai-agents
+  locator: Completes Acquisition of Portkey to Secure AI Agents May 29, 2026
+  excerpt_chars: 240
+  snapshot: Completes Acquisition of Portkey to Secure AI Agents May 29, 2026 Portkey expands Prisma ®
+    AIRS ™ capabilities with control plane to monitor, orchestrate, and govern autonomous agents at scale
+    SANTA CLARA, Calif. , May 29, 2026 -- Palo Alto
+  snapshot_hash: sha256:de975aa2b4df4685d41e810bc073b92efe857eb741af1e282e3255a8b3434f65
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - ownership
+  notes: 'Map label already reflects the acquisition. Open-source gateway repo: github.com/Portkey-AI/gateway.
+    Status is lifecycle only since 2026-09-28; the acquisition is the owner/ownership_event fields.'
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/Portkey-AI/gateway/main/README.md
+    locator: '# AI Gateway #### Route to \d+\+ LLMs with 1 fast & friendly API'
+    excerpt_chars: 0
+    snapshot: '# AI Gateway #### Route to 250+ LLMs with 1 fast & friendly API'
+    snapshot_hash: sha256:d7cf99b55201546912fb23d0c235d40affb23b8abd1f7b9da9c074f92e2f4c31
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+    - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:c9d6844982c59cb62db8e66d67e0ae8eb4ed3016414df1f342babb76b1e048f0
+  review_claim_hash: sha256:5d4c3c0d698682cb80d6b8b44a0c8c809cfb3a35d16cb9e9b7615c3f678fc7fd
+- id: L02-openrouter
+  layer: 2
+  layer_name: AI Gateway
+  tool: OpenRouter
+  claim: 'OpenRouter is an offered AI gateway: its docs describe access to hundreds of AI models through
+    a single API endpoint with automatic fallbacks'
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://openrouter.ai/docs/quickstart.md
+  locator: OpenRouter gives you access
+  excerpt_chars: 240
+  snapshot: OpenRouter gives you access to hundreds of AI models through a single API endpoint. It handles
+    fallbacks automatically and picks the most cost-effective option for each request. There are three
+    ways to integrate with OpenRouter, depending o
+  snapshot_hash: sha256:8e57db442571a51360b3447d71d429673df93ff8377168a1d268678862d2a286
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:d828c7bab54ab1317840994684ef2495662da0695bc4df41f044d2ba031fd4b9
+  review_claim_hash: sha256:bf16d1b97f0b18cef2ef3b2cea68c322baa065cb3f902cbc2bc23c1e7c564d9f
+- id: L02-cloudflare-ai-gateway
+  layer: 2
+  layer_name: AI Gateway
+  tool: Cloudflare AI Gateway
+  claim: 'Cloudflare AI Gateway is an offered AI gateway: its docs describe analytics, caching, rate limiting
+    and model fallback'
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://developers.cloudflare.com/ai-gateway/index.md
+  locator: Observe and control your AI applications with analytics, caching, rate limiting, and model
+    fallback through AI Gateway\.
+  excerpt_chars: 0
+  snapshot: Observe and control your AI applications with analytics, caching, rate limiting, and model
+    fallback through AI Gateway.
+  snapshot_hash: sha256:3468c863dda09abe76679e2b2c15b6935ee4717350577e639be1f2e4a6796602
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:2fcf5110943314c29d3e326e7f4854272282e5baa6c6afe3255afc0843309461
+  review_claim_hash: sha256:c72e862b58eb8e09ea597b2e0dfb43d8706e7b5cd473c3d4eaaacc93db84080a
+- id: L02-kong
+  layer: 2
+  layer_name: AI Gateway
+  tool: Kong
+  claim: Kong Gateway is an actively maintained API, LLM and MCP gateway with AI traffic capabilities
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/Kong/kong
+  locator: null
+  snapshot: Kong/kong latest release 3.9.3 published 2026-06-17T06:02:19Z
+  snapshot_hash: sha256:ae41f607bd626acd71b3da5c9a5873d63d28a1e18ebde586dcf9558447f1e3ff
+  last_version: 3.9.3
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/Kong/kong/master/README.md
+    locator: Kong or Kong Gateway is a cloud-native
+    excerpt_chars: 330
+    snapshot: Kong or Kong Gateway is a cloud-native, platform-agnostic, scalable **API 𖧹 LLM 𖧹 MCP**
+      Gateway distinguished for its high performance and extensibility via plugins. It also provides advanced
+      AI traffic capabilities with multi-LLM support, semantic security, MCP traffic security and analytics,
+      and more. By providing functionalit
+    snapshot_hash: sha256:ca759b0e04b419a2360c50e62096d44ad24816a82785a0b367bcebc4d35e767a
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:9bf1d5bad21adff03d25b4ecacedb6dc2e8cd937b93a44d7ee4cf03bec5b40d8
+  review_claim_hash: sha256:eb35f34d655c91169fc643e5081362609db668f47bc2eaf06fd72c33339c3993
+- id: L03-langgraph
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: LangGraph
+  claim: LangGraph is an actively maintained low-level orchestration framework for building stateful agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/langgraph/
+  locator: null
+  snapshot: 'pypi langgraph 1.2.12 uploaded 2026-09-21: Building stateful, multi-actor applications with
+    LLMs'
+  snapshot_hash: sha256:be5b28dbd8c16f027bd16d3a2d534896acffafdfb46a49f96b8b434430866637
+  last_version: 1.2.12
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md
+    locator: LangGraph is a low-level orchestration framework
+    excerpt_chars: 160
+    snapshot: LangGraph is a low-level orchestration framework for building, managing, and deploying long-running,
+      stateful agents. ```bash pip install -U langgraph ``` > [!T
+    snapshot_hash: sha256:026f0bd7ed6c2a2f2731194f85df87d8fc728534aaa7c7f2ec61832e0d0e9b5c
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:1b246f95155f6b1033a1f88cc6d04e854846f16a3efa7907d81a88e55c36a8a0
+  review_claim_hash: sha256:b5d2985fd11e2a29e095f8c83bfd7657dc815d24d7f3cd45b646fbacfc4efef1
+- id: L03-claude-agent-sdk
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: Claude Agent SDK
+  claim: Claude Agent SDK is an actively maintained library for building AI agents with the agent loop,
+    tools and context management behind Claude Code
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/claude-agent-sdk/
+  locator: null
+  snapshot: 'pypi claude-agent-sdk 0.2.161 uploaded 2026-09-28: Python SDK for Claude Code'
+  snapshot_hash: sha256:dc5496999c5326870c3d64e162a942fb0a43ae82647dfd8afd9129f4ffdef9af
+  last_version: 0.2.161
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: Formerly the Claude Code SDK (renamed 2025).
+  sources:
+  - source_type: page_section
+    source_url: https://code.claude.com/docs/en/agent-sdk/overview.md
+    locator: Build production AI agents with Claude Code as a library
+    excerpt_chars: 360
+    snapshot: Build production AI agents with Claude Code as a library An agent is an application that
+      completes a task by planning its own steps and calling tools that read files, run commands, or edit
+      code. The Agent SDK gives you the same tools, [agent loop](/docs/en/agent-sdk/agent-loop), and context
+      management that power Claude Code, programmable in Python and TypeSc
+    snapshot_hash: sha256:65a2af283b1e5fc5bae4cbbcb712c5417821b7d48a0121bdc8bb72b66ef25a95
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:4419cbefe11cb4b942c2fd551794bfce764c9830f1b50bdb714f2fcf49812f88
+  review_claim_hash: sha256:8ad2a60c63ce202a8ec11020f42f47bd8ab57e60b07958fd85687f27cc394d83
+- id: L03-openai-agents-sdk
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: OpenAI Agents SDK
+  claim: OpenAI Agents SDK is an actively maintained framework for building multi-agent workflows
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/openai-agents/
+  locator: null
+  snapshot: 'pypi openai-agents 0.22.3 uploaded 2026-09-17: OpenAI Agents SDK'
+  snapshot_hash: sha256:974ca08a29073bb5ef05554dea9aba052ab085d8d5106d2370b0067cdb6f0ce4
+  last_version: 0.22.3
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/openai/openai-agents-python/main/README.md
+    locator: The OpenAI Agents SDK is a lightweight yet powerful framework
+    excerpt_chars: 120
+    snapshot: The OpenAI Agents SDK is a lightweight yet powerful framework for building multi-agent workflows.
+      It is provider-agnosti
+    snapshot_hash: sha256:50be1d77b58ec6322906d1c36c97893af5bc7eac1966053648dcd598fddef0d0
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:8a6523b5b96b6ef8a79c0fdebfcaaab58565db3f1a266248fc69fc07b67a6e5b
+  review_claim_hash: sha256:03d9cec4f98864e7a64caf2fc7aeebad9de61a872f6a7198b9a4ae9a16396e77
+- id: L03-google-adk
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: Google ADK
+  claim: Google ADK is an actively maintained open-source framework for building, evaluating and deploying
+    AI agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/google-adk/
+  locator: null
+  snapshot: 'pypi google-adk 2.10.0 uploaded 2026-09-25: Agent Development Kit'
+  snapshot_hash: sha256:bd47165408e5dde49b12a823cb392b66d5b310cee7f84e1fcafa9a36663e9bfe
+  last_version: 2.10.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/google/adk-python/main/README.md
+    locator: An open-source, code-first Python framework for building
+    excerpt_chars: 140
+    snapshot: An open-source, code-first Python framework for building, evaluating, and deploying sophisticated
+      AI agents with flexibility and control. </
+    snapshot_hash: sha256:15f462ed92b4fb7987d1bf2befc8ded80318bed42c8a05e2075ca42d7a1e7b28
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:98abf5c731faa8d80e3bfc883c531a6ec0df233d0b8df68b0ae714e4d8463be5
+  review_claim_hash: sha256:425c37b328d23642387449b1384b3e4a7b2eb52e857967d504cd9ccc2f67f14f
+- id: L03-crewai
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: CrewAI
+  claim: CrewAI is an actively maintained framework for orchestrating role-playing, autonomous AI agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/crewai/
+  locator: null
+  snapshot: 'pypi crewai 1.15.22 uploaded 2026-09-16: Cutting-edge framework for orchestrating role-playing,
+    autonomous AI agents. By fostering collaborat'
+  snapshot_hash: sha256:9a3b27eb793382d4c18a2200099a95d2ab600f1debc7d80cf2ab54c2a2a0617b
+  last_version: 1.15.22
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:bb0b5ffdf046ec6fd24450e1c9ae86e68f5f2d08d0d5f5da1667c16124a6fcc2
+  review_claim_hash: sha256:7b939e6fdca3a4819181ff237c75fd685e435c84693ed325fb615b03d79e9ad6
+- id: L03-microsoft-agent-framework
+  layer: 3
+  layer_name: Orchestration & Agents
+  tool: Microsoft Agent Framework
+  claim: Microsoft Agent Framework is an actively maintained framework for building AI agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/agent-framework/
+  locator: null
+  snapshot: 'pypi agent-framework 1.19.0 uploaded 2026-09-18: Microsoft Agent Framework for building AI
+    Agents with Python. This package contains all the core and'
+  snapshot_hash: sha256:b10bf67cee1f2ceff334050138ba9187b39dc474b0cf4b1e17317c8762b39a4d
+  last_version: 1.19.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  notes: Successor to Semantic Kernel + AutoGen for agents.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:62eb895ec3c202ac386866879d37fe8499451131c08891cecb52c9e38e4a70fc
+  review_claim_hash: sha256:9c6115d24fecf61a6227d0ff61b4ec25cb1c09a568992869f51b2426ccbba3fa
+- id: L04-mcp
+  layer: 4
+  layer_name: Tools & MCP
+  tool: MCP
+  claim: MCP (Model Context Protocol) is an actively maintained specification; its repo holds the spec,
+    protocol schema and docs, and tags are dated spec revisions
+  status: active
+  owner: null
+  on_map: true
+  aliases:
+  - MCP servers
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_tag
+  source_url: https://github.com/modelcontextprotocol/modelcontextprotocol
+  locator: null
+  snapshot: modelcontextprotocol/modelcontextprotocol newest tag 2026-07-28
+  snapshot_hash: sha256:7a3024791b5139cdea82b428ec7a29fac48d3c42f713445b5f4b7847ecd06818
+  last_version: '2026-07-28'
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/README.md
+    locator: 'This repo contains the:'
+    excerpt_chars: 90
+    snapshot: 'This repo contains the: - MCP specification - MCP protocol schema - Official MCP documenta'
+    snapshot_hash: sha256:b34be27076802bbd1a17200bdd1e50d574a578a89ffe2e211cf581be6cf4cf26
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:a2924cd0bcd8856a84a897c7aee5a22aa966f2b208a2f749f4a93baa7a8baa0e
+  review_claim_hash: sha256:42652921bb85a292f430e0f4b0e49a211aaf1787d66aa6e53b1fb5c91c948b63
+- id: L04-agent-skills
+  layer: 4
+  layer_name: Tools & MCP
+  tool: Agent Skills
+  claim: Agent Skills is a current, documented Claude capability for packaging instructions and resources
+    for Claude
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
+  locator: Agent Skills are modular capabilities
+  excerpt_chars: 240
+  snapshot: Agent Skills are modular capabilities that extend Claude's functionality. Each Skill packages
+    instructions, metadata, and optional resources (scripts, templates) that Claude uses automatically
+    when relevant. --- <Note> To learn how zero dat
+  snapshot_hash: sha256:3e4844c3beae5bc55fdaf645e7d3e36dc86993c0a842c81ff6fc91246e0fab66
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:5b8015a547891077d6489162756f67bdd13ddb284719f354383bb53a5cc066fd
+  review_claim_hash: sha256:d3d511b46a37865773f2a4b8b8b493cda3ba0610313147d32265701ef885c758
+- id: L04-fastmcp
+  layer: 4
+  layer_name: Tools & MCP
+  tool: FastMCP
+  claim: FastMCP is an actively maintained Python library for building MCP servers and clients
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/fastmcp/
+  locator: null
+  snapshot: 'pypi fastmcp 4.0.10 uploaded 2026-09-25: The fast, Pythonic way to build MCP servers and
+    clients.'
+  snapshot_hash: sha256:23d735e9a7632f31e5dcec985dc0eefb057b423da1bf1782de106cf7d3b25431
+  last_version: 4.0.10
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:9cec59a36e29be4b5a42c2000ac6263fea04bef447c2aa4e4e9f27ed23f74128
+  review_claim_hash: sha256:1e8e8002cb3485fc8079491bbf00b6a1c4f51dbe9c2c0f5bb04a4fe08bc6e2b4
+- id: L04-composio
+  layer: 4
+  layer_name: Tools & MCP
+  tool: Composio
+  claim: Composio is an actively maintained toolkit platform that gives AI agents pre-authenticated tools
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/composio/
+  locator: null
+  snapshot: 'pypi composio 0.24.0 uploaded 2026-09-24: SDK for integrating Composio with your applications.'
+  snapshot_hash: sha256:d285066d48dbb708e28c2ca61bf9850bac2de48467abcab70f78aa3cbf71635a
+  last_version: 0.24.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/ComposioHQ/composio/next/README.md
+    locator: Composio gives your AI agents
+    excerpt_chars: 150
+    snapshot: Composio gives your AI agents 1000+ pre-authenticated toolkits, per-user sessions, authentication,
+      triggers, and a sandbox, so you can ship agents tha
+    snapshot_hash: sha256:d0f65aa8164ffa3fb09910f83106420c2538f4fdc2892ee5e8c9d78396beaac1
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:f7a0d4f8749b8c129012ae5a83510bf57121613d297c7095fa9d2161304bc117
+  review_claim_hash: sha256:f4a706c33e3d0d95a22b52b205e345fe5cebc49d8c32c456ad4957ece05f1895
+- id: L04-arcade
+  layer: 4
+  layer_name: Tools & MCP
+  tool: Arcade
+  claim: Arcade is an actively maintained tool-calling platform for agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/arcade-mcp/
+  locator: null
+  snapshot: 'pypi arcade-mcp 1.16.1 uploaded 2026-09-25: Arcade.dev - Tool Calling platform for Agents'
+  snapshot_hash: sha256:f554b8cc7023021e3156a3a50b1e34e84e9c14d8bfe30b525ced65871b6df89d
+  last_version: 1.16.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  notes: Arcade (arcade.dev) tool-calling platform. Its package was renamed arcade-ai -> arcade-mcp (arcade-ai
+    is marked DEPRECATED on PyPI).
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:b740a2d2174468f33ae10989039890c86458976e96c3d9a1079be535441f778a
+  review_claim_hash: sha256:8f288a53992844f689a135493ee29d597c80d7505a2164f87f90fcb193d51900
+- id: L05-unstructured
+  layer: 5
+  layer_name: Ingestion
+  tool: Unstructured
+  claim: Unstructured is an actively maintained library that prepares raw documents for downstream ML
+    tasks
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/unstructured/
+  locator: null
+  snapshot: 'pypi unstructured 0.27.10 uploaded 2026-09-27: A library that prepares raw documents for
+    downstream ML tasks.'
+  snapshot_hash: sha256:1ee35eec68b67899d958e4aad3d1d031798c49c7425ed71958b3b713ae2b663b
+  last_version: 0.27.10
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:091198016441b370829ecbf84445a2683fd665f3e8f588981fb4522de2bdd731
+  review_claim_hash: sha256:184a8ed25e037c47ca188aaa58c15275d0b8ddb3bf10d69eb7d89ac4f7c36ac1
+- id: L05-docling
+  layer: 5
+  layer_name: Ingestion
+  tool: Docling
+  claim: Docling is an actively maintained SDK and CLI for parsing documents (PDF, DOCX, HTML and more)
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/docling/
+  locator: null
+  snapshot: 'pypi docling 2.130.0 uploaded 2026-09-22: SDK and CLI for parsing PDF, DOCX, HTML, and more,
+    to a unified document representation for powering'
+  snapshot_hash: sha256:77a2ee4eb82483f65ec8b3c6bd3127a266fdc9d841ea7028a465e922b3805be7
+  last_version: 2.130.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:956e8a4968a4b645c9cf424e0fc73e0dc66571891de0da388015320f8787e271
+  review_claim_hash: sha256:8efb6522231e207636bd1d99ef0f5799fe16bdd25647d20766ce9be87d46eadd
+- id: L05-llamaparse
+  layer: 5
+  layer_name: Ingestion
+  tool: LlamaParse
+  claim: LlamaParse is an actively offered document-processing platform (agentic OCR and parsing), accessed
+    through the llama-cloud SDK
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/llama-cloud/
+  locator: null
+  snapshot: 'pypi llama-cloud 2.16.0 uploaded 2026-09-08: The official Python library for the llama-cloud
+    API'
+  snapshot_hash: sha256:845f6f5b163c672f069889bda3d9b93323a12df8348eb06a59de3343535c2390
+  last_version: 2.16.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: The old llama-parse package is deprecated (maintained until 2026-05-01; migrate to llama-cloud>=1.0).
+    Docs now title it 'Parse'; llamaindex.com still markets it as LlamaParse.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/run-llama/llama-cloud-py/main/README.md
+    locator: The official Python SDK for
+    excerpt_chars: 160
+    snapshot: The official Python SDK for [LlamaParse](https://cloud.llamaindex.ai) - the enterprise platform
+      for agentic OCR and document processing. With this SDK, create p
+    snapshot_hash: sha256:26862c88fc9f310866146055538b9efaa4536489f3ffbc93246c58c500dbd1d7
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:42319ee4e15e60100bdbe8da527f7d602a3f8b7fc618c2abccb549a16498e90d
+  review_claim_hash: sha256:7856abeea9ebf8e8f62eb3a3dd3da6cf4dcee393f219296d295aa7963742bb70
+- id: L05-firecrawl
+  layer: 5
+  layer_name: Ingestion
+  tool: Firecrawl
+  claim: Firecrawl is an actively maintained web scraping and crawling API with a Python SDK
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/firecrawl-py/
+  locator: null
+  snapshot: 'pypi firecrawl-py 4.45.0 uploaded 2026-09-28: Python SDK for the Firecrawl API: web scraping,
+    crawling, web search, and scientific literature sear'
+  snapshot_hash: sha256:06068565786c65ea524f9349f1a8bf576f9b06db8b41f3e87ce1922cf0681721
+  last_version: 4.45.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:1377f75fb00b76970993b9b1c78bb1b7e15d519596e73a483db20623525732d8
+  review_claim_hash: sha256:6765b40ffeab9eaff8669400ee9c72fdf56c336337b9a432e5257fcc38ca6b7e
+- id: L05-airbyte
+  layer: 5
+  layer_name: Ingestion
+  tool: Airbyte
+  claim: Airbyte is an open-source data-movement platform for ELT pipelines and AI agents, and Airbyte's
+    Python package (PyAirbyte) is actively released
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/airbytehq/airbyte
+  locator: null
+  snapshot: airbytehq/airbyte latest release v2.0.0 published 2025-10-15T21:21:41Z
+  snapshot_hash: sha256:15640cd91c20be03f3fbedaca2ce9f9daf8603bed031d168b99d2afefa2bb02a
+  last_version: v2.0.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  notes: GitHub Releases on this repo are infrequent (v2.0.0, 2025-10); the repo itself is very active.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/airbytehq/airbyte/master/README.md
+    locator: Open-source data movement for ELT pipelines
+    excerpt_chars: 160
+    snapshot: 'Open-source data movement for ELT pipelines and AI agents — from APIs, databases & files
+      to warehouses, lakes, and AI applications</em> </p> <p align="center"> '
+    snapshot_hash: sha256:94646d4624769b49fbaf03cb9423143d0a8f6552fae095040c65182edf9ca227
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  - source_type: pypi
+    source_url: https://pypi.org/project/airbyte/
+    snapshot: 'pypi airbyte 0.71.0 uploaded 2026-09-24: PyAirbyte'
+    snapshot_hash: sha256:fcdf292644a1eb1474b092db75626deeb4177b5f382145e5db0e9acf2386bb16
+    last_version: 0.71.0
+    fetched_at: '2026-09-28'
+    supports:
+    - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:76825129324845585ac8e80fe4ca7b67b9d843b67030bb83384e6f379fa6c094
+  review_claim_hash: sha256:88528d91d24426f5a578f99a2d242e5d8d9746ae340ffe4f927595a4eb1edf00
+- id: L06-voyage
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: Voyage
+  claim: Voyage AI embedding and reranking models are actively offered, including through an API that
+    MongoDB provides; MongoDB acquired Voyage AI (announced 2025-02-24)
+  status: active
+  owner: MongoDB
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  - ownership
+  source_type: pypi
+  source_url: https://pypi.org/project/voyageai/
+  locator: null
+  snapshot: 'pypi voyageai 0.5.0 uploaded 2026-07-10: '
+  snapshot_hash: sha256:2bfe67612bd56363875cf5dc1bb9f77b0d3b8fb302407bbc023613e623c6b059
+  last_version: 0.5.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: Status is lifecycle only; ownership (MongoDB, acquisition announced 2025-02-24) is recorded from
+    MongoDB's press release.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/voyage-ai/voyageai-python/main/README.md
+    locator: Voyage AI provides API endpoints for embedding and reranking models
+    excerpt_chars: 120
+    snapshot: Voyage AI provides API endpoints for embedding and reranking models that take in your data
+      (e.g., documents, queries, or
+    snapshot_hash: sha256:5faf1a7c0d3a7947f475b8d793a37e6425c2b0230a7823537e8f817623718669
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/mongodb/docs/main/content/voyageai/source/index.txt
+    locator: MongoDB provides an API for
+    excerpt_chars: 120
+    snapshot: MongoDB provides an API for {+voyageai+}'s best-in-class embedding and reranking models.
+      Use {+voyageai+} models with ot
+    snapshot_hash: sha256:b907adbb808ccdfc874c0af8f98b0f65cce7bf8e0710372d916f7a405a713baf
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - availability
+  - source_type: page_section
+    source_url: https://www.mongodb.com/company/newsroom/press-releases/mongodb-announces-acquisition-of-voyage-ai
+    locator: 'February 24, 2025.{0,5}MongoDB, Inc\. \(NASDAQ: MDB\), the leading database for modern applications,
+      today announced it has acquired Voyage AI'
+    excerpt_chars: 0
+    snapshot: 'February 24, 2025— MongoDB, Inc. (NASDAQ: MDB), the leading database for modern applications,
+      today announced it has acquired Voyage AI'
+    snapshot_hash: sha256:aa23f1a46ed37bb1a9bf3851b123d6f92456ae80e233fdb8120d51b684a0b261
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - ownership
+  ownership_event:
+    kind: acquisition_completed
+    counterparty: MongoDB
+    date: '2025-02-24'
+    source_url: https://www.mongodb.com/company/newsroom/press-releases/mongodb-announces-acquisition-of-voyage-ai
+    note: 'MongoDB press release, February 24, 2025: MongoDB today announced it has acquired Voyage AI.'
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:9b6bb8fe673f3f4ba5c86f6e6a366ca3b0c1364b08b690ac7981dcf223a78888
+  review_claim_hash: sha256:96903a23fbeed5bdd93d09bfaab72557e60d7ad256219532af91505be5776580
+- id: L06-cohere
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: Cohere
+  claim: Cohere models, including embedding models, are actively offered through the Cohere Python SDK
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/cohere/
+  locator: null
+  snapshot: 'pypi cohere 7.1.1 uploaded 2026-08-31: '
+  snapshot_hash: sha256:78207d91910f7cfee0b46aa0cda3c5c6504200c3825c874c7a6e3d99bf682d3d
+  last_version: 7.1.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/cohere-ai/cohere-python/main/README.md
+    locator: co\.embed\( model="embed-[\w.-]+"
+    excerpt_chars: 0
+    snapshot: co.embed( model="embed-english-v3.0"
+    snapshot_hash: sha256:447c665725a187f38a5a71a62fdc23063086c784c1d7b5efc319199037c2fee1
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:f18ed27f20dbd34e059e0b0d76fc80146722e3b77dc3691af8825ce302240c6b
+  review_claim_hash: sha256:2cda7f9301c208fe9f09b324732db031cc7d74da2340f2bc14d30d4a041eaa36
+- id: L06-bge
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: BGE
+  claim: BGE (FlagEmbedding) is an actively maintained retrieval toolkit for search and RAG
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/FlagOpen/FlagEmbedding
+  locator: null
+  snapshot: FlagOpen/FlagEmbedding latest release v1.4.2 published 2026-08-24T02:55:16Z
+  snapshot_hash: sha256:b03a5eb647821dc0cd77e73130f1d1004f061eddecab9b052272d7fc2ea09992
+  last_version: v1.4.2
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/FlagOpen/FlagEmbedding/master/README.md
+    locator: 'BGE: One-Stop Retrieval Toolkit For Search and RAG'
+    excerpt_chars: 0
+    snapshot: 'BGE: One-Stop Retrieval Toolkit For Search and RAG'
+    snapshot_hash: sha256:a1665de7067cf93e01b813973279331156185c0b88953fa3248009ef632ec091
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:b2c9417f9260fb8131aeb1c79ff095fa7bba306e2ce0ab407d64aac3c14f7a90
+  review_claim_hash: sha256:18ccf741185158007e938cecddda5e2baf2e3181272856b15c98ac032cc2d845
+- id: L06-pgvector
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: pgvector
+  claim: pgvector is actively maintained open-source vector similarity search for Postgres
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/pgvector/pgvector
+  locator: null
+  snapshot: pgvector/pgvector newest tag v0.8.6
+  snapshot_hash: sha256:8e7411c159cd28e7a390a6d5e91b3ec1b9ab6c2174a01fadee2dd06f6daa0fdc
+  last_version: v0.8.6
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/pgvector/pgvector/master/README.md
+    locator: Open-source vector similarity search for Postgres
+    excerpt_chars: 0
+    snapshot: Open-source vector similarity search for Postgres
+    snapshot_hash: sha256:df4a78a4674eebc4846c27ccef5d62a1588c21b0e04612efbc8a1454a1c19452
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/pgvector/pgvector/master/CHANGELOG.md
+    locator: '## \d+\.\d+\.\d+ \(\d{4}-\d\d-\d\d\)'
+    excerpt_chars: 0
+    snapshot: '## 0.8.6 (2026-07-29)'
+    snapshot_hash: sha256:aecee0e395b5dd7b83dc8aa5d0908582a562ad1cecb517681b8171d4ae56ecac
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:3d0387ae01f070df2a6b45f22d5588018377ce1268e2514984ba53a953b5d920
+  review_claim_hash: sha256:a31fb2bf89be86fd04d7824a53e9ab8174c78bd4d2810917404cd693d6c0215e
+- id: L06-pinecone
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: Pinecone
+  claim: Pinecone is an actively offered vector database with a maintained Python SDK
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/pinecone/
+  locator: null
+  snapshot: 'pypi pinecone 10.0.0 uploaded 2026-09-03: Pinecone Python SDK'
+  snapshot_hash: sha256:8488edaf5631a4a68e34d6dff3c2820e6260e813a8928f46f85d43f065cc90dc
+  last_version: 10.0.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/pinecone-io/python-sdk/main/README.md
+    locator: The Pinecone Python SDK provides a client for the
+    excerpt_chars: 140
+    snapshot: The Pinecone Python SDK provides a client for the [Pinecone](https://www.pinecone.io/) vector
+      database. Use it to create and manage indexes,
+    snapshot_hash: sha256:2398606b628d655d0e1d3b622a5f2b865b4503a3a24124b47d301461c0b3685b
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:edd3a6c90de87de52a9440a18e77014c217a9ddc47380dd50b20e847eca537ea
+  review_claim_hash: sha256:52569943220f1c36654b43c1f0e01b8e3b8a0e1c28b9c39a16f1941830cdcdff
+- id: L06-qdrant
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: Qdrant
+  claim: Qdrant is an actively maintained vector similarity search engine and vector database
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/qdrant/qdrant
+  locator: null
+  snapshot: qdrant/qdrant latest release v1.19.1 published 2026-09-04T07:59:14Z
+  snapshot_hash: sha256:15af2f6cd33334752e5ad7c6ce271e3d26cb60efe34bdcef2024e2734d2c6153
+  last_version: v1.19.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/qdrant/qdrant/master/README.md
+    locator: '\*\*Qdrant\*\* \(read: _quadrant_\) is a vector similarity search engine and vector database'
+    excerpt_chars: 0
+    snapshot: '**Qdrant** (read: _quadrant_) is a vector similarity search engine and vector database'
+    snapshot_hash: sha256:d8471d4b70dacae83c3bcf63b74d92a2b46b3cd572c6b0010cda68b7a609baaa
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:6b44779c1011260f055e3d5a4f7ff14b5f7f5d9d7fd81d5549222b9e122c8bc7
+  review_claim_hash: sha256:74aaeefde3d009fd6a82ff60f28cec0f71ac5f3f90db3fa665d591ff9a23af6c
+- id: L06-weaviate
+  layer: 6
+  layer_name: Embeddings & Vector DB
+  tool: Weaviate
+  claim: Weaviate is an actively maintained open-source vector database
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/weaviate/weaviate
+  locator: null
+  snapshot: weaviate/weaviate latest release v1.39.7 published 2026-09-25T13:18:52Z
+  snapshot_hash: sha256:4f1edb202dccd057484957763fd9a043fb0bca632afaa28aa427b797819107ad
+  last_version: v1.39.7
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/weaviate/weaviate/main/README.md
+    locator: \*\*Weaviate\*\* is an open-source, cloud-native vector database
+    excerpt_chars: 0
+    snapshot: '**Weaviate** is an open-source, cloud-native vector database'
+    snapshot_hash: sha256:0f565580549ca00c0beff02c9498efbde20d23840dd993a5d771088ad20b4a36
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:28d7773286f7d1d07b1a06450d4b79f2a51b165dc3000b419a0ec5062465e0a1
+  review_claim_hash: sha256:c1ba32d3ccaadd778f61293e75a576a7699d831b7ef2bab6633ea069dae8762a
+- id: L07-llamaindex
+  layer: 7
+  layer_name: Retrieval (RAG)
+  tool: LlamaIndex
+  claim: LlamaIndex is an actively maintained interface between LLMs and your data
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/llama-index/
+  locator: null
+  snapshot: 'pypi llama-index 0.14.25 uploaded 2026-09-21: Interface between LLMs and your data'
+  snapshot_hash: sha256:08b306fae71829410ee9f7d3e5fe7d7dc2d5da99820bddf45b58556f4c4549d8
+  last_version: 0.14.25
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:dcb4064e77e9036ce2295d084b7a8a1b889a01ef0d8c90276558a56dd7d11901
+  review_claim_hash: sha256:797b6ab6aef458a60dbadcca69ac30df389d005ba45dfcabe66a7e00bff85919
+- id: L07-langchain
+  layer: 7
+  layer_name: Retrieval (RAG)
+  tool: LangChain
+  claim: LangChain is an actively maintained framework for building applications with LLMs through composability
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/langchain/
+  locator: null
+  snapshot: 'pypi langchain 1.4.3 uploaded 2026-09-28: Building applications with LLMs through composability'
+  snapshot_hash: sha256:b2b8266cd48841fe71ca327b10d3c8bcc635254fc7d55abc0628035b54266fb5
+  last_version: 1.4.3
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:39a8bb5fd28d24c39bb72d1c29290d10fa510785afcd7423ec15b4539fffce3a
+  review_claim_hash: sha256:81166f6be6dccbf1aae72c868f9e69122cc0ee27206e80657b81a57230bc752c
+- id: L07-haystack
+  layer: 7
+  layer_name: Retrieval (RAG)
+  tool: Haystack
+  claim: Haystack is an actively maintained LLM framework for building customizable, production-ready
+    LLM applications
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/haystack-ai/
+  locator: null
+  snapshot: 'pypi haystack-ai 3.2.0 uploaded 2026-09-24: LLM framework to build customizable, production-ready
+    LLM applications. Connect components (models, '
+  snapshot_hash: sha256:f4d08a1344b4d246d476bb1f41e29a483426111aaad23bab33bc55cb79e19a62
+  last_version: 3.2.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:d5b091df4a9b2b88bc062b1d48a373966a94bd6464222f3b89d47ce53adb3f44
+  review_claim_hash: sha256:e78f668cd748c82e347293cb9077a42de1da9f0c7c6eb0f45cf9c07df5d0bb90
+- id: L07-graphrag
+  layer: 7
+  layer_name: Retrieval (RAG)
+  tool: GraphRAG
+  claim: GraphRAG is an actively maintained graph-based retrieval-augmented generation (RAG) system
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/graphrag/
+  locator: null
+  snapshot: 'pypi graphrag 3.2.0 uploaded 2026-09-23: GraphRAG: A graph-based retrieval-augmented generation
+    (RAG) system.'
+  snapshot_hash: sha256:71a55342fae3597cb88035d6e7c0d8f9a67fdcdeb4d7f9c170ab8637199ba89d
+  last_version: 3.2.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  notes: Microsoft GraphRAG.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:221d941e4dfd4a5af30cb0dceaed5781b8f3da7ee5b127153426ae1ee6293315
+  review_claim_hash: sha256:083d047f20ba53354ba21be93642b4e6ad05d6570e730e885a8880af17fde3c6
+- id: L07-cohere-rerank
+  layer: 7
+  layer_name: Retrieval (RAG)
+  tool: Cohere Rerank
+  claim: Cohere Rerank is an actively offered reranking model; the docs name a current rerank model id
+  status: active
+  owner: null
+  on_map: true
+  aliases:
+  - Rerankers
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://docs.cohere.com/docs/rerank-overview.md
+  locator: rerank-v\d[\w.-]*
+  excerpt_chars: 0
+  snapshot: rerank-v4.0-pro
+  snapshot_hash: sha256:43e9318df1a7aa325981f1f97ca66a6fd3566dbc9cf34b046052603bd741315c
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:2c9228fb09eaa863f42618ce2c804864f59a88b132cdbd0bbc40678cb0acdcae
+  review_claim_hash: sha256:ee9dd6c7734e0082db6e0e0b3ec70cf41d5fef68c39eb9955226ffc64fcb3041
+- id: L08-mem0
+  layer: 8
+  layer_name: Memory
+  tool: Mem0
+  claim: Mem0 is an actively maintained long-term memory layer for AI agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/mem0ai/
+  locator: null
+  snapshot: 'pypi mem0ai 2.2.1 uploaded 2026-09-25: Long-term memory for AI Agents'
+  snapshot_hash: sha256:669259b53569fbfa9810b6d70cc7680da52550ae0d7066d3356b3236c4ec6852
+  last_version: 2.2.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:7ed14c4db87adcc39cf2bee2f9af4ed8162ac87526defa2f15c769396fd7efa8
+  review_claim_hash: sha256:904a4b6ca37d2951d9b7645e8b3e09b436159379c9d9fa25e37e32af3c370024
+- id: L08-zep
+  layer: 8
+  layer_name: Memory
+  tool: Zep
+  claim: Zep is an actively maintained context and memory platform for AI assistants (Zep Cloud SDK),
+    alongside Graphiti, a framework for temporal context graphs for AI agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/zep-cloud/
+  locator: null
+  snapshot: 'pypi zep-cloud 3.30.0 uploaded 2026-09-24: '
+  snapshot_hash: sha256:52f297360e9567edd783b7f8e823f177da9e678148e1456e86096238f9f9d73b
+  last_version: 3.30.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: Zep Community Edition (getzep/zep) is no longer the maintained path; open source moved to getzep/graphiti.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/getzep/zep-python/main/README.md
+    locator: Zep is a context engineering platform for AI Assistant apps
+    excerpt_chars: 190
+    snapshot: Zep is a context engineering platform for AI Assistant apps. With Zep, you can provide AI
+      assistants with the ability to recall past conversations, no matter how distant, while also reducing
+    snapshot_hash: sha256:20e1c489a46d0172c73ec1e524e1960914e3e3769ab14f07de6b954ac6444359
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/getzep/graphiti/main/README.md
+    locator: Graphiti is a framework for building and querying temporal context graphs
+    excerpt_chars: 110
+    snapshot: Graphiti is a framework for building and querying temporal context graphs for AI agents.
+      Unlike static knowled
+    snapshot_hash: sha256:229c6dba2451e7588333624565e9a264c87d9e61565b88f57487b4c38cb0b94b
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+    - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:5d515bbb8c483c38d988ddb0075562076a2c79eb39c47943166984a6ed634711
+  review_claim_hash: sha256:ee876c97fdf67903559fb4d45f1d94b11034309a70414e6c0b7884c7483a2e66
+- id: L08-redis
+  layer: 8
+  layer_name: Memory
+  tool: Redis
+  claim: Redis is an actively maintained cache, data structure server, and document and vector query engine
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/redis/redis
+  locator: null
+  snapshot: redis/redis latest release 8.10.2 published 2026-09-17T15:06:56Z
+  snapshot_hash: sha256:629dcaef8d955530fe0387166e21bdbac39acdc530ce59f671d38bed3c728da3
+  last_version: 8.10.2
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/redis/redis/unstable/README.md
+    locator: Redis is the preferred, fastest, and most feature-rich cache
+    excerpt_chars: 120
+    snapshot: Redis is the preferred, fastest, and most feature-rich cache, data structure server, and
+      document and vector query engin
+    snapshot_hash: sha256:2b46257e0e89d7186d4d3e0ff0a3490103f9376f91beb4c52c479370855f963f
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:8cd5dc42372eaa6dd25fc5dcb82239b801d3ae538dde7455f7795eb2968ad41a
+  review_claim_hash: sha256:9d16d3caddb4f78560c91e94bd33aa0fcd93abb93c60f84d24378a68fb5db420
+- id: L08-neo4j
+  layer: 8
+  layer_name: Memory
+  tool: Neo4j
+  claim: Neo4j is an actively maintained graph database
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_tag
+  source_url: https://github.com/neo4j/neo4j
+  locator: \d{4}\.\d\d\.\d+
+  snapshot: neo4j/neo4j newest tag 2026.09.0 (matching \d{4}\.\d\d\.\d+)
+  snapshot_hash: sha256:6ceff7e04d1e4c1ab378e7c3091b7259a2f16d0730d0965de53ee30fe781e513
+  last_version: 2026.09.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: GitHub 'latest release' on this repo is a stale 2017 alpha and tags are unsorted; the locator
+    regex picks the newest calendar-version tag.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/neo4j/neo4j/dev/README.asciidoc
+    locator: \[Neo4j\] is the world's leading Graph Database
+    excerpt_chars: 0
+    snapshot: '[Neo4j] is the world''s leading Graph Database'
+    snapshot_hash: sha256:1d7f0f2272277b56751a8cfbccc6e369ac87e69e3a8a182eea8909d930bdd302
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:a8762b85ff912a7bc834da594080cc564a528014ea73b70b582ffa735fadbc56
+  review_claim_hash: sha256:cfce0fe1400ced6285ab4195fc526c5b03af6c5d41f92217cd0dc4719897aba1
+- id: L08-weaviate-engram
+  layer: 8
+  layer_name: Memory
+  tool: Weaviate Engram
+  claim: Weaviate Engram is an actively offered managed memory and context service for agents
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://weaviate.io/product/engram
+  locator: 'Engram: Memory Built for AI Agents'
+  excerpt_chars: 240
+  snapshot: 'Engram: Memory Built for AI Agents A fully managed memory and context service purpose-built
+    to help agents remember, learn, and improve over time Get started Documentation Build personalization
+    and continuity Remember preferences and decisi'
+  snapshot_hash: sha256:09422d16c398af4cdc81e8b21c490246f8100ca6148c79e59d2257398fa7f44a
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:f14b324c52ed6252602368d70eedc45f67a156db684fac913e96a2928e190c9a
+  review_claim_hash: sha256:59437f28bbda909deb7fab0c069789de7636e4864bdf0d4d9211ed894dfa1159
+- id: L08-letta
+  layer: 8
+  layer_name: Memory
+  tool: Letta
+  claim: Letta is an actively developed platform for building stateful agents with memory
+  status: active
+  owner: null
+  on_map: false
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/letta-client/
+  locator: null
+  snapshot: 'pypi letta-client 1.12.1 uploaded 2026-06-02: The official Python library for the letta API'
+  snapshot_hash: sha256:69806dd72ba99c6c3a6ecc4dfce7bb2036055de905bc31e9aac8457d7e9caf95
+  last_version: 1.12.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: The `letta` package now ships Letta Code (CLI); the API client is `letta-client`.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/letta-ai/letta/main/README.md
+    locator: Build stateful agents with memory
+    excerpt_chars: 150
+    snapshot: 'Build stateful agents with memory that can learn and improve over time. Letta (f.k.a. MemGPT)
+      is actively developed. The current source code lives in '
+    snapshot_hash: sha256:779f15658b8111500e8bc391eddc4eb02c801ed19d0d21288c6db9463ba25b28
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+    - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:efee37b4ff0f4877cb12e24659e0304b998c2a4ac90912bd8e195b464f983bf8
+  review_claim_hash: sha256:48e3be7849d56b0ccf29c0bf9c9edf3c417ef41568871b151000600d795153f0
+- id: L09-nemo-guardrails
+  layer: 9
+  layer_name: Guardrails
+  tool: NeMo Guardrails
+  claim: NeMo Guardrails is an actively maintained open-source toolkit for adding programmable guardrails
+    to LLM-based systems
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/nemoguardrails/
+  locator: null
+  snapshot: 'pypi nemoguardrails 0.24.1 uploaded 2026-09-16: NeMo Guardrails is an open-source toolkit
+    for easily adding programmable guardrails to LLM-based con'
+  snapshot_hash: sha256:7ae04c5ad84632b6487e0339aacfe1f11744287d788b5e78c0e1441532015c2d
+  last_version: 0.24.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:99b9b06a580ef356bd475667caeedcc2745cf9c107c46ad6c304d69b0c08263b
+  review_claim_hash: sha256:cfb5beaa032839fd76d5001b5c9d9961d9f732d457bbbf938d904388aa250707
+- id: L09-llama-guard
+  layer: 9
+  layer_name: Guardrails
+  tool: Llama Guard
+  claim: Llama Guard 4 is a published 12B multimodal safety classifier model from the meta-llama PurpleLlama
+    project
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://raw.githubusercontent.com/meta-llama/PurpleLlama/main/Llama-Guard4/12B/MODEL_CARD.md
+  locator: Llama Guard 4 is a natively multimodal safety classifier
+  excerpt_chars: 200
+  snapshot: Llama Guard 4 is a natively multimodal safety classifier with 12 billion parameters trained
+    jointly on text and multiple images. It is a dense architecture pruned from the Llama 4 Scout pre-trained
+    mo
+  snapshot_hash: sha256:7e5934748b27bfbe7c1bef12d9e5f3481c1aa5eabbccf524054c6284993aa2b3
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:b0a22d18dad8389820e10a3f0dc9531aa50241b96125daaba5a89001a79fbf3a
+  review_claim_hash: sha256:b57ee6f416b44c870a625a1a5de186e7806b7328b1bc52b76c187a3412fdfe50
+- id: L09-llamafirewall
+  layer: 9
+  layer_name: Guardrails
+  tool: LlamaFirewall
+  claim: LlamaFirewall is a published framework for detecting and mitigating AI-centric security risks
+    (PyPI llamafirewall; last release 2025-05-29)
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/llamafirewall/
+  locator: null
+  snapshot: 'pypi llamafirewall 1.0.3 uploaded 2025-05-29: LlamaFirewall is a framework designed to detect
+    and mitigate AI centric security risks, supporting m'
+  snapshot_hash: sha256:1dab8c13e2f10383a6f093946ed23d706df6e5edec903889dfa071a302d62ce3
+  last_version: 1.0.3
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  notes: Part of Meta's PurpleLlama (repo active, last push 2026-08). PyPI package last released 2025-05-29;
+    watch for abandonment.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:2223d6088763d279c6c5c7462ff889b7951a0c336a3002c289bdb8a935da2906
+  review_claim_hash: sha256:9f6f95bc6d735be1951572ae0b9c0005ac7c1827c6e3e02f4373137fb3507353
+- id: L09-presidio
+  layer: 9
+  layer_name: Guardrails
+  tool: Presidio
+  claim: Presidio is an actively maintained PII-detection component (Presidio analyzer)
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/presidio-analyzer/
+  locator: null
+  snapshot: 'pypi presidio-analyzer 2.2.364 uploaded 2026-07-22: Presidio Analyzer package'
+  snapshot_hash: sha256:a40c39f9a687108f09aaeb08f05c26b436042646c9d9f029658fff0ba3135e65
+  last_version: 2.2.364
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  notes: Microsoft Presidio.
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/data-privacy-stack/presidio/main/presidio-analyzer/README.md
+    locator: The Presidio analyzer is a Python based service for detecting PII entities
+    excerpt_chars: 90
+    snapshot: The Presidio analyzer is a Python based service for detecting PII entities in text. During
+    snapshot_hash: sha256:82539e143d9cbda9d21c207bf0c3f6fc1b8bc78817c9b5d2e83567579f6f6f41
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:87802fc5723e3c23a033dc925244e92c40bbebc3ced33027ad5bda13a4cfcb0e
+  review_claim_hash: sha256:22215728ea1355d56247059f86dd4d85448257cfbb7e3654866abecdd8d47cc4
+- id: L09-check-point-ai-guardrails
+  layer: 9
+  layer_name: Guardrails
+  tool: Check Point AI Guardrails
+  claim: 'Check Point AI Guardrails is an offered Check Point AI Security product: the runtime layer that
+    detects prompt attacks, data leakage, content violations and off-policy agent behavior, served through
+    the Guard API'
+  status: active
+  owner: Check Point
+  on_map: true
+  aliases:
+  - Lakera Guard
+  assertions:
+  - availability
+  - ownership
+  - capability
+  source_type: page_section
+  source_url: https://docs.lakera.ai/docs/api.md
+  locator: Request detailed results of detectors in order to understand Check Point AI Guardrails decisions
+  excerpt_chars: 0
+  snapshot: Request detailed results of detectors in order to understand Check Point AI Guardrails decisions
+  snapshot_hash: sha256:45db224783213e5533395ad7088158cd555427369802f593dffde511ab293e30
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - ownership
+  notes: 'Lakera Guard is now documented as Check Point AI Guardrails (docs.lakera.ai). Status is lifecycle
+    only; ownership is the owner field. Re-receipted 2026-09-28 after the unsupported review: the Guard
+    API overview names the product.'
+  sources:
+  - source_type: page_section
+    source_url: https://docs.lakera.ai/introduction.md
+    locator: 'AI Guardrails, the runtime layer of AI Agent Security: real-time detection and flagging
+      of prompt attacks, data leakage, content violations, and off-policy agent behavior'
+    excerpt_chars: 0
+    snapshot: 'AI Guardrails, the runtime layer of AI Agent Security: real-time detection and flagging
+      of prompt attacks, data leakage, content violations, and off-policy agent behavior'
+    snapshot_hash: sha256:5c36a8a943c0d99cd6436aeb87bd20dc7a7fc52657faf2b90d49b5fbc5b0fce3
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:593b601e2cbeeab356efa2cc010845dc7bd4ce8be89009e738428cfb364f1022
+  review_claim_hash: sha256:dbb7c733f0f83392dcb3d63dec8c3474c37ce2e9e2626ce4b175a158d76dcc91
+- id: L09-guardrails-ai
+  layer: 9
+  layer_name: Guardrails
+  tool: Guardrails AI
+  claim: Guardrails AI is an actively maintained library for adding guardrails to large language models
+  status: active
+  owner: null
+  on_map: false
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/guardrails-ai/
+  locator: null
+  snapshot: 'pypi guardrails-ai 0.11.0 uploaded 2026-08-14: Adding guardrails to large language models.'
+  snapshot_hash: sha256:53d32cfc31db4a224a90ce902e8198f21daa903f81cf4f85eafd8f0f007b64a6
+  last_version: 0.11.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:e27caaeed5873daed62428a933e52b8aa3230942c34550130a503c1a99c66e33
+  review_claim_hash: sha256:d64b8986bbcb108f2ae39551577b6dd1ff3d8fe86485084a16487c728f5563f9
+- id: L10-promptfoo
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: promptfoo
+  claim: promptfoo is an actively maintained LLM eval and testing toolkit; on 2026-03-09 Promptfoo announced
+    it had agreed to be acquired by OpenAI (closing not verified)
+  status: active
+  owner: null
+  ownership_event:
+    kind: acquisition_agreed
+    counterparty: OpenAI
+    date: '2026-03-09'
+    source_url: https://raw.githubusercontent.com/promptfoo/promptfoo/main/site/blog/promptfoo-joining-openai/index.mdx
+    note: 'Agreement to be acquired, announced 2026-03-09 in ''Promptfoo is joining OpenAI'' (promptfoo.dev/blog/promptfoo-joining-openai/).
+      Closing not verified: no newer primary source found.'
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  - ownership
+  source_type: npm
+  source_url: https://www.npmjs.com/package/promptfoo
+  locator: null
+  snapshot: 'npm promptfoo 0.123.1: LLM eval & testing toolkit'
+  snapshot_hash: sha256:88c46ba84a6bc43e5e0bbac6fb4d6446cf6218269a8364c9b9655a3c9b2d9b6b
+  last_version: 0.123.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/promptfoo/promptfoo/main/CHANGELOG.md
+    locator: '## \[\d+\.\d+\.\d+\]\(\S+\) \(\d{4}-\d\d-\d\d\)'
+    excerpt_chars: 0
+    snapshot: '## [0.123.1](https://github.com/promptfoo/promptfoo/compare/0.123.0...0.123.1) (2026-09-18)'
+    snapshot_hash: sha256:3341bcb4ae0e20af70b10b6270b99dcff2c900c18e66985db16abd56eced6fed
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - lifecycle
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/promptfoo/promptfoo/main/site/blog/promptfoo-joining-openai/index.mdx
+    locator: Today we are announcing that Promptfoo has agreed to be acquired by OpenAI
+    excerpt_chars: 160
+    snapshot: Today we are announcing that Promptfoo has agreed to be acquired by OpenAI. Promptfoo will
+      remain open source and we will continue to serve users and customers.
+    snapshot_hash: sha256:ec69995a22421ee52053bf864405f7dc61301ef0d2147bc388db938392bb47ce
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - ownership
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:712d242c568fd0afcf1813b0e292a7bfccf1239799cf992dac81404d893020ca
+  review_claim_hash: sha256:ed82abee9fe51fca6528983d23c8bbe11adc02bb67151d96082370fffab755b4
+- id: L10-deepeval
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: DeepEval
+  claim: DeepEval is an actively maintained LLM evaluation framework
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/deepeval/
+  locator: null
+  snapshot: 'pypi deepeval 4.2.6 uploaded 2026-09-24: The LLM Evaluation Framework'
+  snapshot_hash: sha256:1a330b14106e48df5f79806d8bc027bbc2170794e3f795176c82f244cf954675
+  last_version: 4.2.6
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:bb6261e04538bcba7e0a396958931b8dfc4f5b48767a4f29e772baed4e057c18
+  review_claim_hash: sha256:e01ca64200c666290be58e6cded48df821ca0f364caace19fa3b5b95d78b9219
+- id: L10-braintrust
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: Braintrust
+  claim: Braintrust is an actively maintained platform for evaluating and shipping AI products
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/braintrust/
+  locator: null
+  snapshot: 'pypi braintrust 0.42.0 uploaded 2026-09-22: SDK for integrating Braintrust'
+  snapshot_hash: sha256:da682dd5be7b64b6fd6d147b2087c1c30eb4bd5479e0665f7ffdda7c1cd4c114
+  last_version: 0.42.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/braintrustdata/braintrust-sdk-python/main/README.md
+    locator: \[Braintrust\]\(https://www\.braintrust\.dev/\) is a platform for evaluating and shipping
+      AI products
+    excerpt_chars: 0
+    snapshot: '[Braintrust](https://www.braintrust.dev/) is a platform for evaluating and shipping AI
+      products'
+    snapshot_hash: sha256:df2d00317a63ad70af584fcfebb89a8d21e5bce5f444d0561d9c77fe6653c4c8
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:1ff5742e67b8abebcb76dfa444af2556faa68eea6f1b2695750bd2a246ca2d9f
+  review_claim_hash: sha256:3f308f48db59a7f16f83a6781b0dc4e65ec8041e108aa8fe64e88a4b655afee7
+- id: L10-inspect
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: Inspect
+  claim: Inspect is an actively maintained framework for large language model evaluations
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/inspect-ai/
+  locator: null
+  snapshot: 'pypi inspect-ai 0.3.272 uploaded 2026-09-28: Framework for large language model evaluations'
+  snapshot_hash: sha256:abc0b007e6a7cb5592c949988e106d0608b64ed547c19b433f114ce52ad1d267
+  last_version: 0.3.272
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  notes: UK AI Security Institute's Inspect framework.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:41604775d38d1f652cc9b988c01bfd2815f507238539dfee5ea9b197fc9324e9
+  review_claim_hash: sha256:e999483c030f86afe985236ff5f26a3a95093d2de38935c763cc186e83320b51
+- id: L10-garak
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: garak
+  claim: garak is an actively maintained LLM vulnerability scanner
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/garak/
+  locator: null
+  snapshot: 'pypi garak 0.17.0 uploaded 2026-09-09: LLM vulnerability scanner'
+  snapshot_hash: sha256:1f5da5f16c4b315b9eb3e123d062c7e0b54dc4ef70cd9daba61b07899a7b8822
+  last_version: 0.17.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:ab46071fb60be69f190a5f229a10174935dfb79b607fa350a320cb74e6c0c42f
+  review_claim_hash: sha256:488db2be907cd83327a7cf724459f5c3ab0bece76e60e0dda6807cffd319d789
+- id: L10-pyrit
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: PyRIT
+  claim: PyRIT is an actively maintained library for assessing the robustness of LLMs
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/pyrit/
+  locator: null
+  snapshot: 'pypi pyrit 1.1.0 uploaded 2026-09-04: The Python Risk Identification Tool for LLMs (PyRIT)
+    is a library used to assess the robustness of L'
+  snapshot_hash: sha256:ac271afe5a61b49c11785e72287352475cec07f3a559f8de71f416829f672a91
+  last_version: 1.1.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  notes: Microsoft PyRIT.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:013b81e9d372b248a86855c5248975ce868f428f4f6cbdc3564f060e1eaaddb1
+  review_claim_hash: sha256:2612f004b01caf73756238cd2e658d9c0a80485172f4cfb33a72c15f07200022
+- id: L10-ragas
+  layer: 10
+  layer_name: Evals & Red Team
+  tool: Ragas
+  claim: Ragas is a published evaluation framework for RAG and LLM applications (last PyPI release 2026-01-13)
+  status: active
+  owner: null
+  on_map: false
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/ragas/
+  locator: null
+  snapshot: 'pypi ragas 0.4.3 uploaded 2026-01-13: Evaluation framework for RAG and LLM applications'
+  snapshot_hash: sha256:183af1978159881bec64427172b14a57d19da3ba2c2d746ec499bfb6c41f4747
+  last_version: 0.4.3
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  notes: Last PyPI release 2026-01-13; watch cadence.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:5c5a868aaf520f59d5703d11c0448e176b1eb38d0e2ce00bb77aefdc5cad2068
+  review_claim_hash: sha256:d7a1a297b4ac341f355d4439bce2bcae03aed8099c20fa49a389cc3b0cbd392a
+- id: L11-langfuse
+  layer: 11
+  layer_name: Observability
+  tool: Langfuse
+  claim: Langfuse is an actively maintained LLM observability platform; ClickHouse acquired Langfuse (announced
+    2026-01-16)
+  status: active
+  owner: ClickHouse
+  ownership_event:
+    kind: acquisition_completed
+    counterparty: ClickHouse
+    date: '2026-01-16'
+    source_url: https://raw.githubusercontent.com/langfuse/langfuse-docs/main/content/blog/joining-clickhouse.mdx
+    note: Post 'Langfuse joins ClickHouse', dated 2026/01/16, published at https://langfuse.com/blog/joining-clickhouse.
+      The receipt is that post's source in the official langfuse/langfuse-docs repository because langfuse.com
+      was not reachable from the review environment.
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  - ownership
+  source_type: github_release
+  source_url: https://github.com/langfuse/langfuse
+  locator: null
+  snapshot: langfuse/langfuse latest release v4.46.0 published 2026-09-25T14:20:07Z
+  snapshot_hash: sha256:9911e99d24b347550a0086cfdbd617b9a90ca84d1ca3b505ce87f43e77e93f44
+  last_version: v4.46.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: pypi
+    source_url: https://pypi.org/project/langfuse/
+    snapshot: 'pypi langfuse 4.15.6 uploaded 2026-09-24: Langfuse Python SDK - LLM observability/tracing,
+      datasets, experiments, LLM-as-a-judge evaluation, a'
+    snapshot_hash: sha256:f42e9f800410005e234fc56d2b986d00bb4820e9ade2b4d519d7f8bc431fa80a
+    last_version: 4.15.6
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/langfuse/langfuse-docs/main/content/blog/joining-clickhouse.mdx
+    locator: 'date: \d{4}/\d\d/\d\d'
+    excerpt_chars: 0
+    snapshot: 'date: 2026/01/16'
+    snapshot_hash: sha256:a683de0c927b16cd5c7f3029af53d1521d2ee67c56a430c1eeec4cda4ac36b04
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - ownership
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/langfuse/langfuse-docs/main/content/blog/joining-clickhouse.mdx
+    locator: ClickHouse has acquired Langfuse
+    excerpt_chars: 200
+    snapshot: 'ClickHouse has acquired Langfuse. If you''re reading this as a Langfuse user, your first
+      question is probably: <span className="font-bold">What does this mean for me?</span> Our roadmap
+      stays the same,'
+    snapshot_hash: sha256:1b4f3399c8265d9c293e7cdbdaf3ec0ffe67efbdda318c1196958385a98ff1d3
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - ownership
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:3a6a9d8165d59a6e433ee9a82be8200c27f9aea556ad8c217539f3752704fb29
+  review_claim_hash: sha256:5c8c5a3915c9245b13d30d7145502b37f94e28784f33307ddcf0c1246d211ad0
+- id: L11-langsmith
+  layer: 11
+  layer_name: Observability
+  tool: LangSmith
+  claim: LangSmith is an actively maintained observability and evaluation platform with a Python client
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/langsmith/
+  locator: null
+  snapshot: 'pypi langsmith 0.14.1 uploaded 2026-09-25: Client library to connect to the LangSmith Observability
+    and Evaluation Platform.'
+  snapshot_hash: sha256:d13a334bbfbcfbb4c40298b1df62c1b3a4a041a812078379f43f0230438620c3
+  last_version: 0.14.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:f9bb5148b674aaaa9553219010e59111bbedc9a4869d18ce6d8eb9bb6eae77c1
+  review_claim_hash: sha256:84fca6b3bcb3a07671e1916812b6946856e4e67a033488bcf2ff840192a7d010
+- id: L11-arize-phoenix
+  layer: 11
+  layer_name: Observability
+  tool: Arize Phoenix
+  claim: Arize Phoenix is an actively maintained AI observability and evaluation tool
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/arize-phoenix/
+  locator: null
+  snapshot: 'pypi arize-phoenix 20.16.0 uploaded 2026-09-23: AI Observability and Evaluation'
+  snapshot_hash: sha256:ed19b7065f1934e0b41470b81489d716c546373a436391c189cd1c96ddd5ba8b
+  last_version: 20.16.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:090eeb68b0ebd11679409ee7e357749b1be1f08fea8ccf86d11a2804fbd9414b
+  review_claim_hash: sha256:e877398703b94a71510912cecda7f2749ffbf23c16c204faf859ec3dc1aa1f0a
+- id: L11-mlflow
+  layer: 11
+  layer_name: Observability
+  tool: MLflow
+  claim: MLflow is an actively maintained open-source platform with production-grade observability for
+    agents and LLM applications
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/mlflow/
+  locator: null
+  snapshot: 'pypi mlflow 3.16.1 uploaded 2026-09-16: MLflow is an open source platform for the complete
+    machine learning lifecycle'
+  snapshot_hash: sha256:f35f2931afeb2fc1b478782719e24e6eddd8419cd5dd6b8c99f199f2b354f1e2
+  last_version: 3.16.1
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/mlflow/mlflow/master/README.md
+    locator: MLflow's comprehensive feature set for agents and LLM applications includes production-grade
+    excerpt_chars: 180
+    snapshot: MLflow's comprehensive feature set for agents and LLM applications includes production-grade
+      [observability](https://mlflow.org/docs/latest/genai/tracing), [evaluation](https://mlf
+    snapshot_hash: sha256:c9c23ff54162c2aeb7ff48cf74f9332172e8d6fc11ff430eb596beaa0d35c76f
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:433e840c9d3d916005351618e33395ec0a3dbd37c011d3b8ac46fa87be199611
+  review_claim_hash: sha256:98c36e48aacbc3866ca0239f9a2bc221eefb78226a856933805fde30dc3cf39e
+- id: L11-opentelemetry
+  layer: 11
+  layer_name: Observability
+  tool: OpenTelemetry
+  claim: 'The OpenTelemetry specification is actively maintained: it defines the cross-language requirements
+    for all OpenTelemetry implementations and publishes releases'
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/open-telemetry/opentelemetry-specification
+  locator: null
+  snapshot: open-telemetry/opentelemetry-specification latest release v1.61.0 published 2026-09-14T14:53:49Z
+  snapshot_hash: sha256:6f7f582eae8f8b2b260f8f63116ffad640d83d14e9250d5e82f9a34ebf84c622
+  last_version: v1.61.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/main/README.md
+    locator: The \*\*\[OpenTelemetry\]\[\] specification\*\* describes the cross-language requirements
+      and expectations for all OpenTelemetry implementations
+    excerpt_chars: 0
+    snapshot: The **[OpenTelemetry][] specification** describes the cross-language requirements and expectations
+      for all OpenTelemetry implementations
+    snapshot_hash: sha256:9b7a6193e62f3a895dd6f74dd37736bb036effe118f4f5f4f4dc6598ea90e646
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:c33106764b12044a3a8336c3ad1d25df38dc0f89f02d53570d34b6e2d5bf913e
+  review_claim_hash: sha256:1380befe32620b9b066ae58529091f34269f01431f57616c7e1b5963ea75ba77
+- id: L11-helicone
+  layer: 11
+  layer_name: Observability
+  tool: Helicone
+  claim: Helicone was acquired by Mintlify (announced 2026-03-03) and its service is in maintenance mode
+  status: acquired
+  owner: null
+  on_map: false
+  aliases: []
+  assertions:
+  - lifecycle
+  - ownership
+  source_type: page_section
+  source_url: https://www.helicone.ai/blog/joining-mintlify
+  locator: (?i)maintenance mode
+  excerpt_chars: 160
+  snapshot: maintenance mode. This means security updates, new models, bug & performance fixes all keep
+    shipping. Now for the story… When we started Helicone three years ag
+  snapshot_hash: sha256:378a5095ed522953de4543309d08b38409ee3d0e65aee940e019f2701406987e
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - lifecycle
+  notes: Repo github.com/Helicone/helicone still receives pushes; service in maintenance mode per the
+    vendor.
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: partial
+  review_hash: sha256:0696a90edd8b3ace004d361de6821a3710ef088f2faef86c198a98164a29aff7
+  review_claim_hash: sha256:6e92d62bf914fdedd2b747da6a40ddc76c39dde2983294833f23b2ec2038ef75
+- id: L12-n8n
+  layer: 12
+  layer_name: Automation
+  tool: n8n
+  claim: n8n is an actively maintained workflow automation tool
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: npm
+  source_url: https://www.npmjs.com/package/n8n
+  locator: null
+  snapshot: 'npm n8n 2.40.7: n8n Workflow Automation Tool'
+  snapshot_hash: sha256:d668db4a8564fb2a8d4b5a0fba0de03a26e04e1729441153cd74494879d459e5
+  last_version: 2.40.7
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - capability
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/n8n-io/n8n/master/CHANGELOG.md
+    locator: '# \[\d+\.\d+\.\d+\]\(\S+\) \(\d{4}-\d\d-\d\d\)'
+    excerpt_chars: 0
+    snapshot: '# [2.41.0](https://github.com/n8n-io/n8n/compare/n8n@2.40.0...n8n@2.41.0) (2026-09-22)'
+    snapshot_hash: sha256:ed54eb9cc68b21c891209959549fd68fb7cd6a850038a8bdc7ac5f50a9d2a9a5
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - lifecycle
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:8e2a8ef2a279cd2da99fd342b57b3b8a4d98cf5c0e7e8e7716ae5baed43e2d29
+  review_claim_hash: sha256:613327ddb1a87fa107fcdc6ebd6323db6df03d13bb2218099293c5de79ac98b5
+- id: L12-temporal
+  layer: 12
+  layer_name: Automation
+  tool: Temporal
+  claim: Temporal is an actively maintained durable execution platform that runs workflows resiliently
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: github_release
+  source_url: https://github.com/temporalio/temporal
+  locator: null
+  snapshot: 'temporalio/temporal latest release v1.32.0 published 2026-09-11T16:10:29Z | LIFECYCLE: release
+    v1.32.0 notes mention "deprecat": ...w batch operations. Clients comparing these values with the deprecated
+    enum values must be updated. # Standalone Ne'
+  snapshot_hash: sha256:59eef498b041b00c3525b91b3fa3376a6be837302dcf3ba20e01759c879f541c
+  last_version: v1.32.0
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  sources:
+  - source_type: page_section
+    source_url: https://raw.githubusercontent.com/temporalio/temporal/main/README.md
+    locator: Temporal is a durable execution platform
+    excerpt_chars: 240
+    snapshot: 'Temporal is a durable execution platform that enables developers to build scalable applications
+      without sacrificing productivity or reliability. The Temporal server executes units of application
+      logic called Workflows in a resilient manner '
+    snapshot_hash: sha256:0bf44743ff7c485791f7a443b93d6714205e73e7a74a573bae1153d697ebfcb9
+    last_version: null
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude
+  review_outcome: supported
+  review_hash: sha256:6eab015276e576422219e5f5d668c75386085975532de818d0fc719bf6c639f5
+  review_claim_hash: sha256:00e4a89e0956d6550438a6f74d34fca15f5e2d953e8f301ca44ee9efade2fd9f
+- id: L12-airflow
+  layer: 12
+  layer_name: Automation
+  tool: Airflow
+  claim: Airflow is an actively maintained platform to programmatically author, schedule and monitor data
+    pipelines
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/apache-airflow/
+  locator: null
+  snapshot: 'pypi apache-airflow 3.3.2 uploaded 2026-09-17: Programmatically author, schedule and monitor
+    data pipelines'
+  snapshot_hash: sha256:5708a3aae113bb42ab822179a86c3dc4055403aec31ea2f5653d3d922cd16e5b
+  last_version: 3.3.2
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:e6c686fe762e4af05ec1511dc9d9ecb1d61f3f7461773e9910f68cbbee7969f8
+  review_claim_hash: sha256:a64829bd885ad4e7ff8060e54dfefa453967042c6855f0642a4577105295e3fa
+- id: L12-prefect
+  layer: 12
+  layer_name: Automation
+  tool: Prefect
+  claim: Prefect is an actively maintained workflow orchestration and management tool
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - lifecycle
+  - capability
+  source_type: pypi
+  source_url: https://pypi.org/project/prefect/
+  locator: null
+  snapshot: 'pypi prefect 3.8.7 uploaded 2026-09-27: Workflow orchestration and management.'
+  snapshot_hash: sha256:58a4e97d8b1b4deac64897d41b115e3ee49745367f0b3a5098dba14e298489c9
+  last_version: 3.8.7
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  - lifecycle
+  - capability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:edba7292ea5ccd20700ab045cf3b2017216b9c2927036406e5ebf9bc1f551da2
+  review_claim_hash: sha256:0ea4c63f7bc61321627b1bdf1b4d779d7e7bd4adfdbfee58e75ab1ea163349a8
+- id: L12-make
+  layer: 12
+  layer_name: Automation
+  tool: Make
+  claim: Make is an offered automation platform with a documented developer API
+  status: active
+  owner: null
+  on_map: true
+  aliases: []
+  assertions:
+  - availability
+  - capability
+  source_type: page_section
+  source_url: https://developers.make.com/api-documentation
+  locator: Make API documentation Getting started
+  excerpt_chars: 240
+  snapshot: Make API documentation Getting started Authentication Pagination, sorting and filtering Troubleshooting
+    and error handling Client libraries API Reference Powered by GitBook On this page For the complete
+    documentation index, see llms.txt . T
+  snapshot_hash: sha256:8d478f6b96f6933ba0dfcccfd01fb79323659b32602494ae512a0b1d16049ea7
+  last_version: null
+  fetched_at: '2026-09-28'
+  supports:
+  - availability
+  sources:
+  - source_type: npm
+    source_url: https://www.npmjs.com/package/@makehq/cli
+    snapshot: 'npm @makehq/cli 1.4.0: A command-line tool for Make automation platform'
+    snapshot_hash: sha256:1e35244c6dadf4cfa586e66990c9b7ff09d61bb2dba147ea4cc33a0a8d85a734
+    last_version: 1.4.0
+    fetched_at: '2026-09-28'
+    supports:
+    - capability
+    - availability
+  reviewed_at: '2026-09-28'
+  reviewed_by: claude-code
+  review_outcome: supported
+  review_hash: sha256:96d9af078e2d1899df8d352968d8bc1167e7abbfc572e9cba01c9e0bb079bff5
+  review_claim_hash: sha256:b9c9eff4a1794864e506d0c2e9176be5bd8ffee5252ebd63df699f335aabde45

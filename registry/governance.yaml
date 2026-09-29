@@ -1,0 +1,37 @@
+# "Govern it all" references shown in the map footer: the frameworks the controls draw on. Frameworks,
+# not tools: recorded with a primary source and reviewed by hand; not drift-checked (standards bodies
+# do not publish version feeds we can hash without brittle scraping). `drift map build` warns when an
+# entry is past `review_due`.
+governance:
+- name: OWASP Top 10 for LLM Applications (2026)
+  short: OWASP LLM Top 10 (2026)
+  source_url: https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/
+  note: 2026 edition; the cited page shows a publication date of August 3, 2026.
+  reviewed_at: '2026-09-27'
+  reviewed_by: claude
+  review_due: '2026-10-27'
+- name: OWASP Top 10 for Agentic Applications
+  short: OWASP Agentic Top 10
+  source_url: https://genai.owasp.org/2025/12/09/owasp-genai-security-project-releases-top-10-risks-and-mitigations-for-agentic-ai-security/
+  note: Released 2025-12-10. The published media label it "(2026)"; the announcement title carries no year.
+  reviewed_at: '2026-09-27'
+  reviewed_by: claude
+  review_due: '2026-10-27'
+- name: NIST AI RMF
+  source_url: https://www.nist.gov/itl/ai-risk-management-framework
+  note: AI RMF 1.0 released 2023-01-26; profiles continue to be added.
+  reviewed_at: '2026-09-27'
+  reviewed_by: claude
+  review_due: '2026-10-27'
+- name: ISO/IEC 42001
+  source_url: https://www.iso.org/standard/42001
+  note: AI management system standard. iso.org blocks automated fetches (HTTP 403); checked by hand.
+  reviewed_at: '2026-09-27'
+  reviewed_by: claude
+  review_due: '2026-10-27'
+- name: MITRE ATLAS
+  source_url: https://atlas.mitre.org/
+  note: Adversarial Threat Landscape for AI Systems.
+  reviewed_at: '2026-09-27'
+  reviewed_by: claude
+  review_due: '2026-10-27'

@@ -1,0 +1,707 @@
+{
+  "schema_version": 1,
+  "version": "v2026.09.27.1",
+  "date": "2026-09-27",
+  "expires": "2026-10-27",
+  "trust_window_days": 30,
+  "title": "AI Architecture Map",
+  "author": "@00Kevin",
+  "counts": {
+    "layers": 12,
+    "tools": 69,
+    "controls": 12,
+    "per_layer": [
+      10,
+      5,
+      6,
+      5,
+      5,
+      7,
+      5,
+      5,
+      5,
+      6,
+      5,
+      5
+    ]
+  },
+  "layers": [
+    {
+      "number": 1,
+      "name": "Models & Hosting",
+      "control": "Zero-retention terms, pinned versions with a named owner, no public inference ports",
+      "tools": [
+        {
+          "name": "Claude",
+          "id": "L01-claude",
+          "status": "active",
+          "source_url": "https://platform.claude.com/docs/en/models/overview.md",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "GPT",
+          "id": "L01-gpt",
+          "status": "active",
+          "source_url": "https://developers.openai.com/api/docs/models",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Gemini",
+          "id": "L01-gemini",
+          "status": "active",
+          "source_url": "https://ai.google.dev/gemini-api/docs/models",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Llama",
+          "id": "L01-llama",
+          "status": "active",
+          "source_url": "https://huggingface.co/api/models?author=meta-llama&sort=lastModified&direction=-1&limit=1",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Mistral",
+          "id": "L01-mistral",
+          "status": "active",
+          "source_url": "https://pypi.org/project/mistralai/",
+          "last_version": "2.10.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Qwen",
+          "id": "L01-qwen",
+          "status": "active",
+          "source_url": "https://huggingface.co/api/models?author=Qwen&sort=lastModified&direction=-1&limit=1",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "DeepSeek",
+          "id": "L01-deepseek",
+          "status": "active",
+          "source_url": "https://api-docs.deepseek.com/quick_start/pricing/",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Bedrock",
+          "id": "L01-bedrock",
+          "status": "active",
+          "source_url": "https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "vLLM",
+          "id": "L01-vllm",
+          "status": "active",
+          "source_url": "https://github.com/vllm-project/vllm",
+          "last_version": "v0.30.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Ollama",
+          "id": "L01-ollama",
+          "status": "active",
+          "source_url": "https://github.com/ollama/ollama",
+          "last_version": "v0.34.4",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "AI Gateway",
+      "control": "Central auth, rate limits, spend caps, PII redaction",
+      "tools": [
+        {
+          "name": "LiteLLM",
+          "id": "L02-litellm",
+          "status": "active",
+          "source_url": "https://github.com/BerriAI/litellm",
+          "last_version": "v1.102.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Prisma AIRS (Portkey)",
+          "id": "L02-prisma-airs-portkey",
+          "status": "acquired",
+          "source_url": "https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-acquisition-of-portkey-to-secure-ai-agents",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "OpenRouter",
+          "id": "L02-openrouter",
+          "status": "active",
+          "source_url": "https://openrouter.ai/docs/quickstart.md",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Cloudflare AI Gateway",
+          "id": "L02-cloudflare-ai-gateway",
+          "status": "active",
+          "source_url": "https://developers.cloudflare.com/ai-gateway/index.md",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Kong",
+          "id": "L02-kong",
+          "status": "active",
+          "source_url": "https://github.com/Kong/kong",
+          "last_version": "3.9.3",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Orchestration & Agents",
+      "control": "Step/budget limits, human approval for irreversible actions",
+      "tools": [
+        {
+          "name": "LangGraph",
+          "id": "L03-langgraph",
+          "status": "active",
+          "source_url": "https://pypi.org/project/langgraph/",
+          "last_version": "1.2.12",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Claude Agent SDK",
+          "id": "L03-claude-agent-sdk",
+          "status": "active",
+          "source_url": "https://pypi.org/project/claude-agent-sdk/",
+          "last_version": "0.2.160",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "OpenAI Agents SDK",
+          "id": "L03-openai-agents-sdk",
+          "status": "active",
+          "source_url": "https://pypi.org/project/openai-agents/",
+          "last_version": "0.22.3",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Google ADK",
+          "id": "L03-google-adk",
+          "status": "active",
+          "source_url": "https://pypi.org/project/google-adk/",
+          "last_version": "2.10.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "CrewAI",
+          "id": "L03-crewai",
+          "status": "active",
+          "source_url": "https://pypi.org/project/crewai/",
+          "last_version": "1.15.22",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Microsoft Agent Framework",
+          "id": "L03-microsoft-agent-framework",
+          "status": "active",
+          "source_url": "https://pypi.org/project/agent-framework/",
+          "last_version": "1.19.0",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Tools & MCP",
+      "control": "Least-privilege scopes, allowlists, vetted servers + skills",
+      "tools": [
+        {
+          "name": "MCP",
+          "id": "L04-mcp",
+          "status": "active",
+          "source_url": "https://github.com/modelcontextprotocol/modelcontextprotocol",
+          "last_version": "2026-07-28",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Agent Skills",
+          "id": "L04-agent-skills",
+          "status": "active",
+          "source_url": "https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "FastMCP",
+          "id": "L04-fastmcp",
+          "status": "active",
+          "source_url": "https://pypi.org/project/fastmcp/",
+          "last_version": "4.0.10",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Composio",
+          "id": "L04-composio",
+          "status": "active",
+          "source_url": "https://pypi.org/project/composio/",
+          "last_version": "0.24.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Arcade",
+          "id": "L04-arcade",
+          "status": "active",
+          "source_url": "https://pypi.org/project/arcade-mcp/",
+          "last_version": "1.16.1",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Ingestion",
+      "control": "Sanitize inputs, tag source + trust level on every chunk",
+      "tools": [
+        {
+          "name": "Unstructured",
+          "id": "L05-unstructured",
+          "status": "active",
+          "source_url": "https://pypi.org/project/unstructured/",
+          "last_version": "0.27.10",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Docling",
+          "id": "L05-docling",
+          "status": "active",
+          "source_url": "https://pypi.org/project/docling/",
+          "last_version": "2.130.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "LlamaParse",
+          "id": "L05-llamaparse",
+          "status": "active",
+          "source_url": "https://pypi.org/project/llama-cloud/",
+          "last_version": "2.16.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Firecrawl",
+          "id": "L05-firecrawl",
+          "status": "active",
+          "source_url": "https://pypi.org/project/firecrawl-py/",
+          "last_version": "4.44.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Airbyte",
+          "id": "L05-airbyte",
+          "status": "active",
+          "source_url": "https://github.com/airbytehq/airbyte",
+          "last_version": "v2.0.0",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Embeddings & Vector DB",
+      "control": "Classify vectors like source data, ACL filters at query time",
+      "tools": [
+        {
+          "name": "Voyage",
+          "id": "L06-voyage",
+          "status": "acquired",
+          "source_url": "https://pypi.org/project/voyageai/",
+          "last_version": "0.5.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Cohere",
+          "id": "L06-cohere",
+          "status": "active",
+          "source_url": "https://pypi.org/project/cohere/",
+          "last_version": "7.1.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "BGE",
+          "id": "L06-bge",
+          "status": "active",
+          "source_url": "https://github.com/FlagOpen/FlagEmbedding",
+          "last_version": "v1.4.2",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "pgvector",
+          "id": "L06-pgvector",
+          "status": "active",
+          "source_url": "https://github.com/pgvector/pgvector",
+          "last_version": "v0.8.6",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Pinecone",
+          "id": "L06-pinecone",
+          "status": "active",
+          "source_url": "https://pypi.org/project/pinecone/",
+          "last_version": "10.0.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Qdrant",
+          "id": "L06-qdrant",
+          "status": "active",
+          "source_url": "https://github.com/qdrant/qdrant",
+          "last_version": "v1.19.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Weaviate",
+          "id": "L06-weaviate",
+          "status": "active",
+          "source_url": "https://github.com/weaviate/weaviate",
+          "last_version": "v1.39.7",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Retrieval (RAG)",
+      "control": "Retrieved text = untrusted input, never instructions",
+      "tools": [
+        {
+          "name": "LlamaIndex",
+          "id": "L07-llamaindex",
+          "status": "active",
+          "source_url": "https://pypi.org/project/llama-index/",
+          "last_version": "0.14.25",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "LangChain",
+          "id": "L07-langchain",
+          "status": "active",
+          "source_url": "https://pypi.org/project/langchain/",
+          "last_version": "1.4.2",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Haystack",
+          "id": "L07-haystack",
+          "status": "active",
+          "source_url": "https://pypi.org/project/haystack-ai/",
+          "last_version": "3.2.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "GraphRAG",
+          "id": "L07-graphrag",
+          "status": "active",
+          "source_url": "https://pypi.org/project/graphrag/",
+          "last_version": "3.2.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Cohere Rerank",
+          "id": "L07-cohere-rerank",
+          "status": "active",
+          "source_url": "https://docs.cohere.com/docs/rerank-overview.md",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Memory",
+      "control": "Validate writes, TTLs, user-visible + deletable memory",
+      "tools": [
+        {
+          "name": "Mem0",
+          "id": "L08-mem0",
+          "status": "active",
+          "source_url": "https://pypi.org/project/mem0ai/",
+          "last_version": "2.2.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Zep",
+          "id": "L08-zep",
+          "status": "active",
+          "source_url": "https://pypi.org/project/zep-cloud/",
+          "last_version": "3.30.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Redis",
+          "id": "L08-redis",
+          "status": "active",
+          "source_url": "https://github.com/redis/redis",
+          "last_version": "8.10.2",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Neo4j",
+          "id": "L08-neo4j",
+          "status": "active",
+          "source_url": "https://github.com/neo4j/neo4j",
+          "last_version": "2026.09.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Weaviate Engram",
+          "id": "L08-weaviate-engram",
+          "status": "active",
+          "source_url": "https://weaviate.io/product/engram",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Guardrails",
+      "control": "Defense in depth. Assume filters get bypassed",
+      "tools": [
+        {
+          "name": "NeMo Guardrails",
+          "id": "L09-nemo-guardrails",
+          "status": "active",
+          "source_url": "https://pypi.org/project/nemoguardrails/",
+          "last_version": "0.24.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Llama Guard",
+          "id": "L09-llama-guard",
+          "status": "active",
+          "source_url": "https://huggingface.co/api/models/meta-llama/Llama-Guard-4-12B",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "LlamaFirewall",
+          "id": "L09-llamafirewall",
+          "status": "active",
+          "source_url": "https://pypi.org/project/llamafirewall/",
+          "last_version": "1.0.3",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Presidio",
+          "id": "L09-presidio",
+          "status": "active",
+          "source_url": "https://pypi.org/project/presidio-analyzer/",
+          "last_version": "2.2.364",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Check Point AI Guardrails",
+          "id": "L09-check-point-ai-guardrails",
+          "status": "acquired",
+          "source_url": "https://docs.lakera.ai/introduction.md",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "name": "Evals & Red Team",
+      "control": "Adversarial evals gate every deploy",
+      "tools": [
+        {
+          "name": "promptfoo",
+          "id": "L10-promptfoo",
+          "status": "active",
+          "source_url": "https://www.npmjs.com/package/promptfoo",
+          "last_version": "0.123.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "DeepEval",
+          "id": "L10-deepeval",
+          "status": "active",
+          "source_url": "https://pypi.org/project/deepeval/",
+          "last_version": "4.2.6",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Braintrust",
+          "id": "L10-braintrust",
+          "status": "active",
+          "source_url": "https://pypi.org/project/braintrust/",
+          "last_version": "0.42.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Inspect",
+          "id": "L10-inspect",
+          "status": "active",
+          "source_url": "https://pypi.org/project/inspect-ai/",
+          "last_version": "0.3.271",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "garak",
+          "id": "L10-garak",
+          "status": "active",
+          "source_url": "https://pypi.org/project/garak/",
+          "last_version": "0.17.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "PyRIT",
+          "id": "L10-pyrit",
+          "status": "active",
+          "source_url": "https://pypi.org/project/pyrit/",
+          "last_version": "1.1.0",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "name": "Observability",
+      "control": "Audit every tool call; redact + restrict the logs",
+      "tools": [
+        {
+          "name": "Langfuse",
+          "id": "L11-langfuse",
+          "status": "active",
+          "source_url": "https://github.com/langfuse/langfuse",
+          "last_version": "v4.46.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "LangSmith",
+          "id": "L11-langsmith",
+          "status": "active",
+          "source_url": "https://pypi.org/project/langsmith/",
+          "last_version": "0.14.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Arize Phoenix",
+          "id": "L11-arize-phoenix",
+          "status": "active",
+          "source_url": "https://pypi.org/project/arize-phoenix/",
+          "last_version": "20.16.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "MLflow",
+          "id": "L11-mlflow",
+          "status": "active",
+          "source_url": "https://pypi.org/project/mlflow/",
+          "last_version": "3.16.1",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "OpenTelemetry",
+          "id": "L11-opentelemetry",
+          "status": "active",
+          "source_url": "https://github.com/open-telemetry/opentelemetry-specification",
+          "last_version": "v1.61.0",
+          "last_checked": "2026-09-27"
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "name": "Automation",
+      "control": "Vaulted secrets, signed webhooks, named owners",
+      "tools": [
+        {
+          "name": "n8n",
+          "id": "L12-n8n",
+          "status": "active",
+          "source_url": "https://www.npmjs.com/package/n8n",
+          "last_version": "2.40.7",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Temporal",
+          "id": "L12-temporal",
+          "status": "active",
+          "source_url": "https://github.com/temporalio/temporal",
+          "last_version": "v1.32.0",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Airflow",
+          "id": "L12-airflow",
+          "status": "active",
+          "source_url": "https://pypi.org/project/apache-airflow/",
+          "last_version": "3.3.2",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Prefect",
+          "id": "L12-prefect",
+          "status": "active",
+          "source_url": "https://pypi.org/project/prefect/",
+          "last_version": "3.8.7",
+          "last_checked": "2026-09-27"
+        },
+        {
+          "name": "Make",
+          "id": "L12-make",
+          "status": "active",
+          "source_url": "https://developers.make.com/api-documentation",
+          "last_version": null,
+          "last_checked": "2026-09-27"
+        }
+      ]
+    }
+  ],
+  "governance": [
+    {
+      "name": "OWASP Top 10 for LLM Applications (2026)",
+      "short": "OWASP LLM Top 10 (2026)",
+      "source_url": "https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/"
+    },
+    {
+      "name": "OWASP Top 10 for Agentic Applications",
+      "short": "OWASP Agentic Top 10",
+      "source_url": "https://genai.owasp.org/2025/12/09/owasp-genai-security-project-releases-top-10-risks-and-mitigations-for-agentic-ai-security/"
+    },
+    {
+      "name": "NIST AI RMF",
+      "short": "NIST AI RMF",
+      "source_url": "https://www.nist.gov/itl/ai-risk-management-framework"
+    },
+    {
+      "name": "ISO/IEC 42001",
+      "short": "ISO/IEC 42001",
+      "source_url": "https://www.iso.org/standard/42001"
+    },
+    {
+      "name": "MITRE ATLAS",
+      "short": "MITRE ATLAS",
+      "source_url": "https://atlas.mitre.org/"
+    }
+  ],
+  "copy": {
+    "title": "The AI Architecture Map",
+    "title_accent": "Build it. Secure it.",
+    "subtitle": "12 layers every AI build runs on, the tools for each, and the security control none of them should ship without.",
+    "column_layer": "LAYER",
+    "column_tools": "TOOLS",
+    "column_control": "SECURITY CONTROL",
+    "governance_label": "GOVERN IT ALL",
+    "cta": "Save this for your next build.",
+    "cta_accent": "Security is a layer-by-layer job.",
+    "handle": "@00Kevin",
+    "video_hook": "Production AI runs on 12 layers.",
+    "video_hook_accent": "Every one is an attack surface."
+  }
+}
