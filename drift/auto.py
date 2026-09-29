@@ -147,7 +147,9 @@ def needs_version(claims: list[dict], today: dt.date, maps_dir: Path) -> tuple[b
     p = mapgen.latest_map(maps_dir)
     if p is None:
         return True, "no published map"
-    pub = json.loads(p.read_text(encoding="utf-8"))
+    state, pub, why = mapgen.publication_state(p)
+    if state != "current":
+        return True, f"published map is not a current-schema publication ({why})"
     try:
         cand = mapgen.build_map(claims, mapgen.load_controls(), pub["version"], mapgen.load_governance(), mapgen.load_copy())
     except mapgen.MapError as e:

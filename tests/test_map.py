@@ -264,12 +264,14 @@ def test_committed_newest_map_verifies_against_the_registry():
     assert ok, msgs
 
 
-def test_legacy_schema_map_is_reported_as_skipped(tmp_path):
+def test_unpinned_legacy_schema_map_fails_verification(tmp_path):
+    """A02: a schema-1 map.json under a historical version id is not a pass just because it says 'legacy'."""
     legacy = tmp_path / "v2026.09.27.1"
     legacy.mkdir()
     (legacy / "map.json").write_text(json.dumps({"schema_version": 1, "version": "v2026.09.27.1"}), encoding="utf-8")
     ok, msgs = M.verify(tmp_path)
-    assert ok and "legacy" in msgs[0]
+    assert not ok and "schema" in msgs[0]
+    assert M.verify_publication(tmp_path)[0] == "failed"
 
 
 # ---- PR #5 review: R3 (verify enforces reviews), R7 (no already-expired build), R8 (counts) ----
@@ -385,3 +387,93 @@ def test_verify_fails_when_the_rendered_png_or_its_sidecar_is_missing(tmp_path, 
     map_md.write_text(M.render_map_markdown(m), encoding="utf-8")
     ok, msgs = M.verify(maps, reg, readme, map_md, render=True)
     assert not ok and any(missing in s and "missing" in s for s in msgs), msgs
+
+
+# ---- A02 (2026-09-29 audit): the current publication must be the current schema ----
+
+def _rewrite(path, m, readme, md):
+    path.write_text(M.map_json_text(m), encoding="utf-8")
+    if m.get("layers") is not None and m.get("version"):
+        readme.write_text("x\n" + M.render_readme_block(m) + "\ny\n", encoding="utf-8")
+        md.write_text(M.render_map_markdown(m), encoding="utf-8")
+
+
+def _cli(maps, reg, readme, md, *cmd):
+    return M.main([*cmd, "--maps-dir", str(maps)] + (["--registry", str(reg), "--readme", str(readme),
+                                                     "--map-md", str(md), "--no-render"] if cmd[0] == "verify" else
+                                                    ["--today", "2026-09-28"]))
+
+
+@pytest.mark.parametrize("probe", ["downgrade", "missing", "unknown", "string", "empty_layers"])
+def test_schema_probes_fail_map_check_and_map_verify(tmp_path, monkeypatch, probe):
+    reg, maps, readme, md = _published(tmp_path, monkeypatch, mini_claims(reviewed_on="2026-09-28"))
+    assert _cli(maps, reg, readme, md, "check") == 0 and _cli(maps, reg, readme, md, "verify") == 0
+    path = M.latest_map(maps)
+    m = json.loads(path.read_text(encoding="utf-8"))
+    if probe == "downgrade":
+        m["schema_version"] = 1
+    elif probe == "missing":
+        del m["schema_version"]
+    elif probe == "unknown":
+        m["schema_version"] = 99
+    elif probe == "string":
+        m["schema_version"] = str(M.SCHEMA_VERSION)
+    else:
+        m["layers"] = []
+    _rewrite(path, m, readme, md)
+    assert _cli(maps, reg, readme, md, "check") == 1
+    assert _cli(maps, reg, readme, md, "verify") == 1
+    assert not M.check_expiry(path, dt.date(2026, 9, 28))[0]
+    assert M.verify_publication(maps, reg, readme, md, render=False)[0] == "failed"
+
+
+def _copy_version(src_version, dest, name=None):
+    import shutil
+    target = dest / (name or src_version)
+    shutil.copytree(M.MAPS_DIR / src_version, target)
+    return target / "map.json"
+
+
+@pytest.mark.parametrize("version", sorted(M.LEGACY_MAPS))
+def test_pinned_legacy_map_as_newest_is_a_distinct_non_success(tmp_path, version):
+    maps = tmp_path / "maps"
+    _copy_version(version, maps)
+    state, msgs = M.verify_publication(maps, render=False)
+    assert state == "skipped" and "legacy" in msgs[0]
+    assert M.main(["verify", "--maps-dir", str(maps), "--no-render"]) == M.EXIT_LEGACY
+    assert M.main(["check", "--maps-dir", str(maps), "--today", "2026-09-29"]) == M.EXIT_LEGACY
+    assert M.EXIT_LEGACY not in (0, 1)
+
+
+def test_legacy_pin_is_exact_version_and_digest(tmp_path):
+    maps = tmp_path / "a"
+    p = _copy_version("v2026.09.28", maps)
+    p.write_bytes(p.read_bytes().replace(b"LiteLLM", b"LiteLLM2"))  # one edited byte range: not the pinned file
+    assert M.verify_publication(maps, render=False)[0] == "failed"
+    assert M.main(["check", "--maps-dir", str(maps), "--today", "2026-09-29"]) == 1
+    maps = tmp_path / "b"
+    _copy_version("v2026.09.28", maps, name="v2026.09.30")  # pinned bytes under another version id
+    assert M.verify_publication(maps, render=False)[0] == "failed"
+
+
+def test_pinned_digest_ignores_crlf_checkouts(tmp_path):
+    maps = tmp_path / "maps"
+    p = _copy_version("v2026.09.28", maps)
+    p.write_bytes(p.read_bytes().replace(b"\n", b"\r\n"))
+    assert M.publication_state(p)[0] == "legacy"
+
+
+def test_archived_legacy_versions_stay_readable():
+    for version, digest in M.LEGACY_MAPS.items():
+        p = M.MAPS_DIR / version / "map.json"
+        assert M.map_file_sha256(p) == digest, version
+        state, m, _ = M.publication_state(p)
+        assert state == "legacy" and m["version"] == version
+        assert m["layers"] and M.render_map_markdown(m)
+        if m["schema_version"] >= 2:
+            M.validate_publication_dates(m)
+
+
+def test_committed_newest_map_is_the_current_schema():
+    state, m, msg = M.publication_state(M.latest_map())
+    assert state == "current" and m["schema_version"] == M.SCHEMA_VERSION, msg
