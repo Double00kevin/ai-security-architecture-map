@@ -111,9 +111,7 @@ def test_unsupported_review_is_flagged_even_when_the_source_is_unchanged():
 
 def test_partial_candidate_is_flagged_and_labelled_as_candidate():
     c = stored(when="2026-10-01", on_map=False)
-    c.update(review_outcome="partial")
-    from drift import registry as R
-    c["review_hash"] = R.review_hash(c)
+    reviewed(c, when="2026-10-01", outcome="partial")  # the outcome is part of the review event
     f = C.compare(c, Evidence("1.0.0", "pypi example 1.0.0"), TODAY)
     assert f.flagged and "unresolved_review" in f.reasons and not f.on_map
 

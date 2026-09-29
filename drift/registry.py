@@ -60,7 +60,9 @@ HEADER = (
 REQUIRED = ("id", "layer", "layer_name", "tool", "claim", "status", "source_type", "source_url")
 RECEIPT_KEYS = ("source_type", "source_url", "locator", "excerpt_chars", "redirect_to",
                 "snapshot", "snapshot_hash", "last_version", "fetched_at", "supports")
-REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash")
+REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash",
+               "review_fetched_at", "review_event_hash")
+APPROVAL_KEYS = ("approved_by", "approved_at", "approval_ref")  # optional; written only by `drift approve`
 AUTO_KEYS = ("auto_checked_at", "auto_check_basis", "auto_check_hash")
 HUMAN_REVIEW_MAX_DAYS = 180  # an automated re-check never carries a person's review further than this
 LEGACY_KEYS = ("last_checked", "checked_by")  # replaced by fetched_at; never a review
@@ -150,23 +152,78 @@ def claim_hash(c: dict) -> str:
     return _hash(p)
 
 
+def _iso(v) -> str | None:
+    d = _date(v)
+    return None if d is None else d.isoformat()
+
+
+def fetch_dates(c: dict) -> list[str | None]:
+    """Each receipt's fetched_at, primary first, as YYYY-MM-DD."""
+    return [_iso(r.get("fetched_at")) for r in receipts(c)]
+
+
+def review_event_payload(c: dict) -> dict:
+    """The review event: the claim/evidence digest it assessed plus who assessed it, when, with what
+    outcome, the fetch date of every receipt it read, and the owner's approval if one was recorded.
+    Change any of it and the event, and every check that rests on it, is void."""
+    return {
+        "review_hash": c.get("review_hash"),
+        "review_claim_hash": c.get("review_claim_hash"),
+        "outcome": c.get("review_outcome"),
+        "assessor": c.get("reviewed_by"),
+        "reviewed_at": _iso(c.get("reviewed_at")),
+        "fetched_at": [_iso(d) for d in (c.get("review_fetched_at") or [])],
+        "approval": {k: (None if c.get(k) in (None, "") else str(c[k])) for k in APPROVAL_KEYS},
+    }
+
+
+def review_event_hash(c: dict) -> str:
+    return _hash(review_event_payload(c))
+
+
+def review_event_intact(c: dict) -> bool:
+    """The stored event digest matches the stored review record (it says nothing about current evidence)."""
+    try:
+        return bool(c.get("review_event_hash")) and c["review_event_hash"] == review_event_hash(c)
+    except ValueError:  # an unparseable date
+        return False
+
+
+def auto_check_hash(c: dict) -> str:
+    """The automated re-check: the current evidence digest, its date and basis, every receipt's fetch
+    date, and the review event it carries forward."""
+    return _hash({"review_hash": review_hash(c), "auto_checked_at": _iso(c.get("auto_checked_at")),
+                  "basis": c.get("auto_check_basis"), "fetched_at": fetch_dates(c),
+                  "review_event_hash": c.get("review_event_hash")})
+
+
 def review_state(c: dict) -> str:
-    """'missing' (no review), 'void' (the reviewed evidence or claim changed, or an excerpt no longer
-    matches its stored digest), or 'valid'."""
+    """'missing' (no review), 'void' (the reviewed evidence, claim or review event changed, a receipt's
+    fetch date differs from the one assessed, or an excerpt no longer matches its stored digest), or
+    'valid'."""
     if not c.get("review_hash"):
         return "missing"
-    if integrity_problems(c):
+    if integrity_problems(c) or not review_event_intact(c):
         return "void"
-    return "valid" if c["review_hash"] == review_hash(c) else "void"
+    try:
+        same_fetch = [_iso(d) for d in (c.get("review_fetched_at") or [])] == fetch_dates(c)
+    except ValueError:
+        return "void"
+    return "valid" if same_fetch and c["review_hash"] == review_hash(c) else "void"
 
 
 def auto_state(c: dict) -> str:
     """'missing', 'void' or 'valid' for the automated re-check. Valid only when it matches the current
-    evidence, the claim is unchanged since a person's `supported` review, and that review was at most
-    HUMAN_REVIEW_MAX_DAYS old when the re-check was made."""
+    evidence and fetch dates, the review event it carries is intact, the claim is unchanged since that
+    `supported` review, and the review was at most HUMAN_REVIEW_MAX_DAYS old when the re-check was made."""
     if not c.get("auto_check_hash"):
         return "missing"
-    if integrity_problems(c) or c["auto_check_hash"] != review_hash(c):
+    try:
+        if integrity_problems(c) or c["auto_check_hash"] != auto_check_hash(c):
+            return "void"
+    except ValueError:
+        return "void"
+    if not review_event_intact(c):
         return "void"
     if c.get("review_outcome") != "supported" or not c.get("review_claim_hash") \
             or c["review_claim_hash"] != claim_hash(c):
@@ -303,8 +360,20 @@ def validate(claims: list[dict]) -> list[str]:
                 _date(c["reviewed_at"])
             except ValueError:
                 raise RegistryError(f"{cid}: reviewed_at must be YYYY-MM-DD") from None
+            rf = c["review_fetched_at"]
+            if not isinstance(rf, list):
+                raise RegistryError(f"{cid}: review_fetched_at must be a list of YYYY-MM-DD, one per receipt")
+            try:
+                [_date(d) for d in rf]
+            except ValueError:
+                raise RegistryError(f"{cid}: review_fetched_at must be a list of YYYY-MM-DD") from None
+            if not HASH_RE.fullmatch(str(c["review_event_hash"])):
+                raise RegistryError(f"{cid}: review_event_hash must look like sha256:<64 lowercase hex>")
             if review_state(c) == "void" and auto_state(c) != "valid":
                 void.append(cid)
+        approval = [k for k in APPROVAL_KEYS if c.get(k) not in (None, "")]
+        if approval and (len(approval) != len(APPROVAL_KEYS) or not present):
+            raise RegistryError(f"{cid}: incomplete owner approval (has {approval}); only `drift approve` writes it")
         auto_present = [k for k in AUTO_KEYS if c.get(k) not in (None, "")]
         if auto_present:
             if len(auto_present) != len(AUTO_KEYS):

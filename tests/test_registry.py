@@ -209,3 +209,125 @@ def test_every_committed_receipt_digest_matches_its_excerpt():
     claims = R.load()
     bad = [(c["id"], p) for c in claims for p in R.integrity_problems(c)]
     assert bad == []
+
+
+# ---- A03 (2026-09-29 audit): the review event binds outcome, assessor, date and fetch dates ----
+
+import datetime as _dt  # noqa: E402
+
+from drift import auto as _A  # noqa: E402
+from drift import review as _review  # noqa: E402
+
+
+def _valid_claim():
+    c = reviewed(claim(fetched_at="2026-09-27"), when="2026-09-28")
+    assert R.review_state(c) == "valid" and R.publishable(c) == []
+    return c
+
+
+EVENT_EDITS = [("reviewed_by", "someone-else"), ("reviewed_at", "2026-09-29"), ("review_outcome", "partial"),
+               ("fetched_at", "2026-09-28")]
+
+
+@pytest.mark.parametrize("field,value", EVENT_EDITS)
+def test_editing_review_metadata_voids_the_event(field, value):
+    c = _valid_claim()
+    c[field] = value
+    assert R.review_state(c) == "void", field
+    assert R.publishable(c), field
+    assert c["id"] in R.validate([c])
+    assert R.last_check(c) == (None, None)
+
+
+def test_editing_a_secondary_receipt_fetch_date_voids_the_event():
+    extra = {"source_type": "pypi", "source_url": "https://pypi.org/project/other/", "snapshot": "x",
+             "snapshot_hash": R.excerpt_sha256("x"), "fetched_at": "2026-09-27", "supports": ["availability"]}
+    c = reviewed(claim(fetched_at="2026-09-27", sources=[extra]), when="2026-09-28")
+    assert R.review_state(c) == "valid"
+    c["sources"][0]["fetched_at"] = "2026-09-28"
+    assert R.review_state(c) == "void" and R.publishable(c)
+
+
+@pytest.mark.parametrize("field,value", EVENT_EDITS[:3] + [("auto_checked_at", "2026-10-30")])
+def test_editing_review_metadata_also_voids_an_automated_re_check(field, value):
+    c = _valid_claim()
+    _A.apply(c, [{"id": c["id"], "receipt": 0, "reasons": [], "old_hash": c["snapshot_hash"],
+                  "new_hash": c["snapshot_hash"], "new_excerpt": c["snapshot"]}], "unchanged", _dt.date(2026, 10, 3))
+    assert R.auto_state(c) == "valid" and R.publishable(c) == []
+    c[field] = value
+    assert R.auto_state(c) == "void" and R.publishable(c), field
+
+
+def test_a_new_review_event_restores_publishability():
+    c = _valid_claim()
+    c["reviewed_by"] = "someone-else"
+    assert R.publishable(c)
+    _review.record(c, "supported", "claude-code", _dt.date(2026, 9, 29))
+    assert R.review_state(c) == "valid" and R.publishable(c) == []
+    assert c["review_fetched_at"] == ["2026-09-27"]
+
+
+def test_review_record_is_complete_or_rejected():
+    c = _valid_claim()
+    del c["review_event_hash"]
+    with pytest.raises(R.RegistryError, match="incomplete review record"):
+        R.validate([c])
+
+
+# ---- A03: the one-time migration of existing review records ----
+
+from drift import migrate as _migrate  # noqa: E402
+
+
+def _old_format(c: dict) -> dict:
+    """A review record as written before the event digest existed (five keys)."""
+    for k in ("review_fetched_at", "review_event_hash"):
+        c.pop(k)
+    return c
+
+
+def test_migration_binds_existing_reviews_without_changing_anything_else():
+    claims = [_old_format(_valid_claim()), claim(id="L01-unreviewed", tool="Other")]
+    before = [dict(c) for c in claims]
+    n = _migrate.add_review_events(claims)
+    assert n == 1
+    c = claims[0]
+    assert {k: v for k, v in c.items() if k not in ("review_fetched_at", "review_event_hash")} == before[0]
+    assert claims[1] == before[1]
+    assert c["review_fetched_at"] == ["2026-09-27"] and R.review_state(c) == "valid"
+    assert R.last_check(c) == (_dt.date(2026, 9, 28), R.last_check(c)[1])
+    R.validate(claims)
+
+
+def test_migration_refuses_a_void_old_review_and_writes_nothing():
+    good, bad = _old_format(_valid_claim()), _old_format(_valid_claim())
+    bad.update(id="L01-edited", tool="Edited", claim="edited after the review")
+    snapshot = [dict(good), dict(bad)]
+    with pytest.raises(R.RegistryError, match="L01-edited"):
+        _migrate.add_review_events([good, bad])
+    assert [good, bad] == snapshot
+
+
+def test_migration_refuses_a_registry_that_is_already_migrated():
+    with pytest.raises(R.RegistryError, match="already"):
+        _migrate.add_review_events([_valid_claim()])
+
+
+def test_migration_cannot_extend_review_age(tmp_path):
+    """No date is an input: the review date and every check date stay exactly as they were."""
+    import inspect
+    import yaml
+    assert list(inspect.signature(_migrate.add_review_events).parameters) == ["claims"]
+    reg = tmp_path / "claims.yaml"
+    old = [_old_format(_valid_claim())]
+    reg.write_text(yaml.safe_dump({"claims": old}, sort_keys=False), encoding="utf-8")
+    assert _migrate.main(["review-events", "--registry", str(reg)]) == 0
+    (c,) = R.load(reg)
+    assert c["reviewed_at"] == "2026-09-28" and c["fetched_at"] == "2026-09-27"
+    assert R.last_check(c)[0] == _dt.date(2026, 9, 28)
+    assert _migrate.main(["review-events", "--registry", str(reg)]) == 1  # second run refuses
+
+
+def test_every_committed_review_record_has_a_valid_event():
+    for c in R.load():
+        assert c.get("review_event_hash") and R.review_event_intact(c), c["id"]

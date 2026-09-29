@@ -158,4 +158,8 @@ def reviewed(c: dict, when: str = "2026-09-28", outcome: str = "supported", by: 
     c.update(reviewed_at=when, reviewed_by=by, review_outcome=outcome)
     c["review_hash"] = registry.review_hash(c)
     c["review_claim_hash"] = registry.claim_hash(c)
+    c["review_fetched_at"] = registry.fetch_dates(c)
+    for k in registry.APPROVAL_KEYS:
+        c.pop(k, None)
+    c["review_event_hash"] = registry.review_event_hash(c)
     return c

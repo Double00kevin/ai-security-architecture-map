@@ -129,7 +129,7 @@ def apply(c: dict, findings: list[dict], basis: str, when: dt.date) -> None:
         registry.set_receipt(c, i, upd)
     c["auto_checked_at"] = when.isoformat()
     c["auto_check_basis"] = basis
-    c["auto_check_hash"] = registry.review_hash(c)
+    c["auto_check_hash"] = registry.auto_check_hash(c)
     if registry.auto_state(c) != "valid":  # belt and braces: never write a re-check that would not hold
         raise registry.RegistryError(f"{c['id']}: automated re-check would not be valid; refusing to write it")
 

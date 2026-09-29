@@ -1,10 +1,10 @@
-"""Entry point: python -m drift <check|snapshot|review|map|triage|auto> [options]."""
+"""Entry point: python -m drift <check|snapshot|review|map|triage|auto|migrate> [options]."""
 
 from __future__ import annotations
 
 import sys
 
-USAGE = "usage: python -m drift {check,snapshot,review,map,triage,auto} [options]   (add -h after the command for help)"
+USAGE = "usage: python -m drift {check,snapshot,review,map,triage,auto,migrate} [options]   (add -h after the command for help)"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         from .triage import main as run
     elif cmd == "auto":
         from .auto import main as run
+    elif cmd == "migrate":
+        from .migrate import main as run
     else:
         print(USAGE, file=sys.stderr)
         return 2

@@ -27,6 +27,17 @@ from pathlib import Path
 from . import registry
 
 
+def _event(c: dict, outcome: str, by: str, when: dt.date) -> dict:
+    """The claim with a new review event, as `record` would write it. Pure."""
+    e = {k: v for k, v in c.items() if k not in registry.AUTO_KEYS + registry.APPROVAL_KEYS}
+    e.update(reviewed_at=when.isoformat(), reviewed_by=by.strip(), review_outcome=outcome)
+    e["review_hash"] = registry.review_hash(e)
+    e["review_claim_hash"] = registry.claim_hash(e)
+    e["review_fetched_at"] = registry.fetch_dates(e)
+    e["review_event_hash"] = registry.review_event_hash(e)
+    return e
+
+
 def record(c: dict, outcome: str, by: str, when: dt.date) -> None:
     if outcome not in registry.REVIEW_OUTCOMES:
         raise registry.RegistryError(f"outcome must be one of {registry.REVIEW_OUTCOMES}")
@@ -36,20 +47,15 @@ def record(c: dict, outcome: str, by: str, when: dt.date) -> None:
     if bad:
         raise registry.RegistryError(f"{c['id']}: evidence does not match its digest; re-take it with "
                                      f"`drift snapshot --id {c['id']}` and read it first: {'; '.join(bad)}")
+    e = _event(c, outcome, by, when)
     if outcome == "supported":
-        probe = {k: v for k, v in c.items() if k not in registry.AUTO_KEYS}
-        gaps = [w for w in registry.publishable({**probe, "review_hash": registry.review_hash(c),
-                                                  "review_claim_hash": registry.claim_hash(c),
-                                                  "review_outcome": "supported"})]
+        gaps = registry.publishable(_event(c, "supported", by, when))
         if gaps:
             raise registry.RegistryError(f"{c['id']}: cannot record 'supported': {'; '.join(gaps)}")
-    c["reviewed_at"] = when.isoformat()
-    c["reviewed_by"] = by.strip()
-    c["review_outcome"] = outcome
-    c["review_hash"] = registry.review_hash(c)
-    c["review_claim_hash"] = registry.claim_hash(c)
-    for k in registry.AUTO_KEYS:  # a person's review supersedes any automated re-check
+    # a new event supersedes any automated re-check and carries no approval
+    for k in registry.AUTO_KEYS + registry.APPROVAL_KEYS:
         c.pop(k, None)
+    c.update({k: e[k] for k in registry.REVIEW_KEYS})
 
 
 def main(argv: list[str] | None = None) -> int:
