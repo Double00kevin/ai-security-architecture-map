@@ -200,6 +200,21 @@ try {
   Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
   Assert-That $n ($r.issues.Count -eq 2 -and "$($r.issues[1])" -notmatch '--label') 'retried without the label'
 
+  # 2e. two consecutive failures with the label still missing: the second run finds the unlabelled issue
+  # by its stable title marker and does not open a duplicate (audit round 2, N3)
+  $n = 'map-fails-no-label-twice'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n)
+  $r1 = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_LABEL_MISSING = 1 }
+  Invoke-Git -C $fx.repo reset -q --hard | Out-Null  # drop the first run's local outputs (logs/ is ignored and kept)
+  Invoke-Git -C $fx.repo clean -fdq | Out-Null  # so run 2 passes preflight and fails at the same stage
+  $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_LABEL_MISSING = 1 }
+  Test-Common $n $r
+  Assert-That $n ($r1.code -eq 1 -and $r.code -eq 1) "both runs exit 1 (got $($r1.code), $($r.code))"
+  Assert-That $n ($r.stages.map -eq 'failed') "second run failed at the same stage (got $($r.stages | ConvertTo-Json -Compress))"
+  $store = @(Get-Content -Raw -LiteralPath (Join-Path $fx.dir 'gh-issues.json') | ConvertFrom-Json | ForEach-Object { $_ })
+  Assert-That $n ($store.Count -eq 1) "exactly one open alert issue after two failures (got $($store.Count))"
+  Assert-That $n ($r.logText -match 'not opening a duplicate') 'second run skipped the duplicate'
+
   # 3. flagged, no .env: triage skipped, exit 3, report still published
   $n = 'flagged'; "scenario: $n"
   $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_CHECK_EXIT = 3; FAKEPY_FLAGGED = 2 }

@@ -25,9 +25,10 @@
 
   Alert: when any stage failed, the owner is told through a GitHub issue opened with `gh issue create`
   (label weekly-run-failed, title "Weekly run failed <date>", body = stage statuses and the log file
-  name; never log contents or secrets). No duplicate is opened while one with that label is open. If gh
-  is missing or not authenticated, that is logged and the exit code is unchanged. Create the label
-  once: gh label create weekly-run-failed (without it the issue is opened unlabelled).
+  name; never log contents or secrets). No duplicate is opened while an open issue carries that label or
+  the stable title marker "Weekly run failed " (so an unlabelled fallback issue is found too). If gh is
+  missing or not authenticated, that is logged and the exit code is unchanged. Create the label once:
+  gh label create weekly-run-failed (without it the issue is opened unlabelled).
 
   README sections "How a claim is checked" and "Security posture" describe the rules this job follows.
 
@@ -90,6 +91,7 @@ function Save-Status {
 function Open-FailureIssue {
   # Tell the owner. One open issue per failure streak; the body carries statuses and a file name only.
   $label = 'weekly-run-failed'
+  $titleMarker = 'Weekly run failed '  # stable prefix: finds an unlabelled issue opened by the fallback below
   $gh = Get-Command gh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $gh) { Write-Stamped 'alert: gh not found on PATH; no issue opened (exit code unchanged)'; return }
   $ghExe = $gh.Source
@@ -97,16 +99,22 @@ function Open-FailureIssue {
   & $ghExe auth status *> $null  # its output names the account; never logged
   if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: gh is not usable (auth status exit $LASTEXITCODE); no issue opened (exit code unchanged)"; return }
   $global:LASTEXITCODE = -999999
-  $open = ("$(& $ghExe issue list --state open --label $label --json number --jq length 2>$null)").Trim()
-  if ($LASTEXITCODE -ne 0 -or $open -notmatch '^\d+$') { Write-Stamped "alert: cannot list open '$label' issues (exit $LASTEXITCODE); no issue opened"; return }
-  if ([int]$open -gt 0) { Write-Stamped "alert: an open '$label' issue already exists; not opening a duplicate"; return }
+  $raw = (& $ghExe issue list --state open --limit 200 --json number,title,labels 2>$null) | Out-String
+  if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: cannot list open issues (exit $LASTEXITCODE); no issue opened"; return }
+  try { $parsed = $raw | ConvertFrom-Json } catch { Write-Stamped 'alert: cannot read the open-issue list; no issue opened'; return }
+  $open = 0
+  foreach ($issue in $parsed) {  # foreach enumerates the array on Windows PowerShell 5.1 and 7 alike
+    $names = @($issue.labels | ForEach-Object { $_.name })
+    if (("$($issue.title)".StartsWith($titleMarker)) -or ($names -contains $label)) { $open++ }
+  }
+  if ($open -gt 0) { Write-Stamped "alert: an open '$label' issue (or one titled '$($titleMarker.Trim())') already exists; not opening a duplicate"; return }
   $bodyFile = Join-Path $logDir "weekly-issue-$stamp.md"
   $lines = @("The weekly drift run on $stamp failed.", '', 'Stage statuses:', '') +
     @($status.Keys | ForEach-Object { "- ${_}: $($status[$_])" }) +
     @('', "Log file: logs/$(Split-Path -Leaf $log) on the machine that runs the job. It is not attached; this issue carries no log contents.",
       '', 'Opened by scripts/weekly-check.ps1. Close it once a weekly run succeeds.')
   [System.IO.File]::WriteAllLines($bodyFile, [string[]]$lines, (New-Object System.Text.UTF8Encoding $false))
-  $title = "Weekly run failed $stamp"
+  $title = "$titleMarker$stamp"
   $global:LASTEXITCODE = -999999
   & $ghExe issue create --title $title --label $label --body-file $bodyFile 2>&1 | ForEach-Object { Write-RunLog "$_" }
   if ($LASTEXITCODE -eq 0) { Write-Stamped "alert: opened '$title'"; return }
