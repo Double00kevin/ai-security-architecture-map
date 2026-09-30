@@ -1,7 +1,8 @@
 """`drift map`: generate a versioned map.json from reviewed evidence, and refuse what isn't.
 
     python -m drift map build --version v2026.10.04   # writes maps/v2026.10.04/map.json, MAP.md, README block
-    python -m drift map check                          # exit 1 if the newest map is expired, missing or invalid
+    python -m drift map check                          # exit 1 if the newest map is expired, missing, invalid
+                                                       # or shows an owner approval the registry does not back
     python -m drift map check --today 2026-11-01       # replay a date (tests, CI)
     python -m drift map verify                         # rebuild the newest version into a temp dir and diff
     python -m drift map watch                          # scheduled CI: did the weekly job stall? governance due?
@@ -526,8 +527,10 @@ def publication_state(map_path: Path) -> tuple[str, dict | None, str]:
                           f"{SCHEMA_VERSION} (only pinned historical versions may be older)")
 
 
-def check_state(map_path: Path | None, today: dt.date) -> tuple[str, str]:
-    """('ok' | 'failed' | 'skipped', message) for the newest published map."""
+def check_state(map_path: Path | None, today: dt.date, claims: list[dict]) -> tuple[str, str]:
+    """('ok' | 'failed' | 'skipped', message) for the newest published map: current schema, the
+    publication's own dates, not expired, and every owner approval it shows backed by the registry
+    (`approval_problems`, the same comparison `map verify` runs). No rendering."""
     if map_path is None:
         return "failed", "no map found: run `python -m drift map build --version vYYYY.MM.DD`"
     state, m, why = publication_state(map_path)
@@ -541,6 +544,9 @@ def check_state(map_path: Path | None, today: dt.date) -> tuple[str, str]:
             raise MapError("publication version is in the future")
     except (ValueError, MapError) as e:
         return "failed", f"invalid map: {e}"
+    unbacked = approval_problems(m, claims)
+    if unbacked:
+        return "failed", "invalid map: " + "; ".join(unbacked)
     expires = dt.date.fromisoformat(m["expires"])
     left = (expires - today).days
     if left < 0:
@@ -548,8 +554,9 @@ def check_state(map_path: Path | None, today: dt.date) -> tuple[str, str]:
     return "ok", f"{m['version']} valid, {left} day(s) left (expires {m['expires']})"
 
 
-def check_expiry(map_path: Path | None, today: dt.date) -> tuple[bool, str]:
-    state, msg = check_state(map_path, today)
+def check_expiry(map_path: Path | None, today: dt.date, claims: list[dict] | None = None) -> tuple[bool, str]:
+    """check_state as (ok, message); without claims it reads the default registry."""
+    state, msg = check_state(map_path, today, registry.load() if claims is None else claims)
     return state == "ok", msg
 
 
@@ -562,10 +569,10 @@ def stalled_publication_margin(today: dt.date) -> int:
     return RENEW_DAYS + 1 - d
 
 
-def watch(map_path: Path | None, governance: list[dict], today: dt.date) -> list[str]:
+def watch(map_path: Path | None, governance: list[dict], today: dt.date, claims: list[dict]) -> list[str]:
     """Detection for the scheduled CI run: problems the owner must hear about before the map lapses."""
     problems = []
-    state, msg = check_state(map_path, today)
+    state, msg = check_state(map_path, today, claims)
     if state != "ok":
         problems.append(f"map check: {msg}")
     else:
@@ -733,10 +740,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--today", help="override today's date (tests, replays)")
     c = sub.add_parser("check", help="fail if the newest map is expired")
     c.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
+    c.add_argument("--registry", type=Path, default=registry.REGISTRY)
     c.add_argument("--today")
     w = sub.add_parser("watch", help="scheduled CI: fail if the weekly job stalled or a governance review is due")
     w.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
     w.add_argument("--governance", type=Path, default=GOVERNANCE)
+    w.add_argument("--registry", type=Path, default=registry.REGISTRY)
     w.add_argument("--today")
     v = sub.add_parser("verify", help="rebuild the newest version from current inputs and diff against the committed files")
     v.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
@@ -766,7 +775,8 @@ def main(argv: list[str] | None = None) -> int:
         codes = {"ok": EXIT_OK, "failed": EXIT_FAILED, "skipped": EXIT_LEGACY}
         if args.cmd == "watch":
             today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
-            problems = watch(latest_map(args.maps_dir), load_governance(args.governance), today)
+            problems = watch(latest_map(args.maps_dir), load_governance(args.governance), today,
+                             registry.load(args.registry))
             for p in problems:
                 print(f"map watch FAILED: {p}")
             if not problems:
@@ -779,7 +789,8 @@ def main(argv: list[str] | None = None) -> int:
                 print({"ok": "map verify: ", "failed": "map verify FAILED: ", "skipped": "map verify "}[state] + msg)
             return codes[state]
         state, msg = check_state(latest_map(args.maps_dir),
-                                 dt.date.fromisoformat(args.today) if args.today else dt.date.today())
+                                 dt.date.fromisoformat(args.today) if args.today else dt.date.today(),
+                                 registry.load(args.registry))
         print({"ok": "map check: ", "failed": "map check FAILED: ", "skipped": "map check "}[state] + msg)
         return codes[state]
     except (MapError, registry.RegistryError) as e:

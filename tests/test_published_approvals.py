@@ -103,3 +103,56 @@ def test_under_reporting_a_newer_approval_stays_valid(tmp_path, monkeypatch):
     R.save(claims, reg)
     ok, msgs = verify(reg, maps, readme, md)
     assert ok, msgs
+
+
+# ---- Audit round 3, N1: `map check` must reject what `map verify` rejects about approvals ----
+
+def cli(reg, maps, readme, md, today):
+    check = M.main(["check", "--maps-dir", str(maps), "--registry", str(reg), "--today", today])
+    verify_rc = M.main(["verify", "--maps-dir", str(maps), "--registry", str(reg), "--readme", str(readme),
+                        "--map-md", str(md), "--no-render"])
+    return check, verify_rc
+
+
+def _case(tmp_path, monkeypatch, case):
+    reviewed_on = "2026-09-27" if case in ("different_date", "matching") else "2026-09-28"
+    claims = mini_claims(reviewed_on=reviewed_on)
+    if case in ("different_ref", "different_date", "superseded", "matching"):
+        approve(claims[0], when="2026-09-28")
+    if case == "future":
+        approve(claims[0], when="2026-10-02")
+    reg, maps, readme, md = _published(tmp_path, monkeypatch, claims)
+    today = "2026-09-29"
+    if case == "fabricated":
+        forge(maps, readme, md, owner_approved=True, approved_at="2026-09-28", approval_ref=URL)
+    elif case == "different_ref":
+        forge(maps, readme, md, approval_ref=f"https://github.com/{R.REPOSITORY}/pull/8")
+    elif case == "different_date":
+        forge(maps, readme, md, approved_at="2026-09-27")
+    elif case == "superseded":
+        claims[0]["claim"] = "Tool 1.0 is an actively offered model family"  # not map content
+        review.record(claims[0], "supported", "claude-code", dt.date(2026, 9, 29))
+        R.save(claims, reg)
+    elif case == "future":
+        today = "2026-10-02"
+    elif case == "under_reporting":
+        approve(claims[0], when="2026-09-29")
+        R.save(claims, reg)
+    return cli(reg, maps, readme, md, today)
+
+
+@pytest.mark.parametrize("case", ["fabricated", "different_ref", "different_date", "superseded", "future"])
+def test_map_check_and_map_verify_both_reject_an_unbacked_published_approval(tmp_path, monkeypatch, case):
+    check, verify_rc = _case(tmp_path, monkeypatch, case)
+    assert check != 0 and verify_rc != 0, (case, check, verify_rc)
+
+
+@pytest.mark.parametrize("case", ["matching", "under_reporting"])
+def test_map_check_and_map_verify_both_accept_a_backed_or_under_reported_approval(tmp_path, monkeypatch, case):
+    assert _case(tmp_path, monkeypatch, case) == (0, 0)
+
+
+def test_check_and_verify_share_one_approval_comparison():
+    import inspect
+    assert "approval_problems(" in inspect.getsource(M.check_state)
+    assert "approval_problems(" in inspect.getsource(M.verify_publication)
