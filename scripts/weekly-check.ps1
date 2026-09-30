@@ -26,7 +26,8 @@
   Alert: when any stage failed, the owner is told through a GitHub issue opened with `gh issue create`
   (label weekly-run-failed, title "Weekly run failed <date>", body = stage statuses and the log file
   name; never log contents or secrets). No duplicate is opened while an open issue carries that label or
-  the stable title marker "Weekly run failed " (so an unlabelled fallback issue is found too). If gh is
+  the stable title marker "Weekly run failed " (so an unlabelled fallback issue is found too); both are
+  targeted server-side queries, so an old alert is found however many issues are open. If gh is
   missing or not authenticated, that is logged and the exit code is unchanged. Create the label once:
   gh label create weekly-run-failed (without it the issue is opened unlabelled).
 
@@ -98,14 +99,18 @@ function Open-FailureIssue {
   $global:LASTEXITCODE = -999999
   & $ghExe auth status *> $null  # its output names the account; never logged
   if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: gh is not usable (auth status exit $LASTEXITCODE); no issue opened (exit code unchanged)"; return }
-  $global:LASTEXITCODE = -999999
-  $raw = (& $ghExe issue list --state open --limit 200 --json 'number,title,labels' 2>$null) | Out-String
-  if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: cannot list open issues (exit $LASTEXITCODE); no issue opened"; return }
-  try { $parsed = $raw | ConvertFrom-Json } catch { Write-Stamped 'alert: cannot read the open-issue list; no issue opened'; return }
+  # Two targeted queries, filtered on the server, so an old alert is found however many other issues are open:
+  # any open issue with the label, and a title search for the marker (checked locally for the exact prefix).
   $open = 0
-  foreach ($issue in $parsed) {  # foreach enumerates the array on Windows PowerShell 5.1 and 7 alike
-    $names = @($issue.labels | ForEach-Object { $_.name })
-    if (("$($issue.title)".StartsWith($titleMarker)) -or ($names -contains $label)) { $open++ }
+  foreach ($query in @(@('--label', $label, '--limit', '1', '--json', 'number'),
+                       @('--search', "$($titleMarker.Trim()) in:title", '--limit', '100', '--json', 'number,title'))) {
+    $global:LASTEXITCODE = -999999
+    $raw = (& $ghExe issue list --state open @query 2>$null) | Out-String
+    if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: cannot list open issues (exit $LASTEXITCODE); no issue opened"; return }
+    try { $parsed = $raw | ConvertFrom-Json } catch { Write-Stamped 'alert: cannot read the open-issue list; no issue opened'; return }
+    foreach ($issue in $parsed) {  # foreach enumerates the array on Windows PowerShell 5.1 and 7 alike
+      if ($query[0] -eq '--label' -or "$($issue.title)".StartsWith($titleMarker)) { $open++ }
+    }
   }
   if ($open -gt 0) { Write-Stamped "alert: an open '$label' issue (or one titled '$($titleMarker.Trim())') already exists; not opening a duplicate"; return }
   $bodyFile = Join-Path $logDir "weekly-issue-$stamp.md"

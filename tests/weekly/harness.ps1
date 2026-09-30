@@ -86,7 +86,7 @@ function New-Fixture([string]$dir) {
 function Invoke-Weekly($fx, [hashtable]$envs) {
   $ErrorActionPreference = 'Continue'  # see Invoke-Git
   $saved = @{}
-  $keys = @('PATH', 'FAKEPY_MARKERS', 'FAKEPY_CHECK_EXIT', 'FAKEPY_FLAGGED', 'FAKEPY_NOREPORT', 'FAKEPY_MAP_EXIT', 'FAKEPY_TRIAGE_EXIT', 'FAKEPY_AUTO_EXIT', 'FAKEPY_VERIFY_EXIT', 'FAKEPY_PARTIAL_WRITE', 'FAKEGH_UNAVAILABLE', 'FAKEGH_OPEN', 'FAKEGH_LABEL_MISSING', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM')
+  $keys = @('PATH', 'FAKEPY_MARKERS', 'FAKEPY_CHECK_EXIT', 'FAKEPY_FLAGGED', 'FAKEPY_NOREPORT', 'FAKEPY_MAP_EXIT', 'FAKEPY_TRIAGE_EXIT', 'FAKEPY_AUTO_EXIT', 'FAKEPY_VERIFY_EXIT', 'FAKEPY_PARTIAL_WRITE', 'FAKEGH_UNAVAILABLE', 'FAKEGH_OPEN', 'FAKEGH_LABEL_MISSING', 'FAKEGH_BURY', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM')
   foreach ($k in $keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k) }
   try {
     $emptyCfg = Join-Path $fx.dir 'empty.gitconfig'
@@ -214,6 +214,14 @@ try {
   $store = @(Get-Content -Raw -LiteralPath (Join-Path $fx.dir 'gh-issues.json') | ConvertFrom-Json | ForEach-Object { $_ })
   Assert-That $n ($store.Count -eq 1) "exactly one open alert issue after two failures (got $($store.Count))"
   Assert-That $n ($r.logText -match 'not opening a duplicate') 'second run skipped the duplicate'
+
+  # 2f. the open alert is older than the first page of open issues (250 newer unrelated ones): a targeted
+  # title search still finds it (audit round 3, N5)
+  $n = 'map-fails-alert-beyond-first-page'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_BURY = 250 }
+  Test-Common $n $r
+  Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
+  Assert-That $n ($r.issues.Count -eq 0 -and $r.logText -match 'not opening a duplicate') "buried alert found; no duplicate (created $($r.issues.Count))"
 
   # 3. flagged, no .env: triage skipped, exit 3, report still published
   $n = 'flagged'; "scenario: $n"
