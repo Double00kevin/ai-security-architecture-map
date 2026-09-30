@@ -291,7 +291,7 @@ def test_main_output_names_report_run_id_and_sha_and_exits_nonzero_on_failure(tm
 
 
 def test_unresolved_review_is_deterministic_and_needs_no_model_call():
-    """R5: an unsupported/partial review on an unchanged source goes to a human by rule."""
+    """R5: an unsupported/partial review on an unchanged source goes to the owner by rule."""
     fc = FakeCall(verdict="noise")
     t = run([finding(reasons=["unresolved_review"], new_excerpt=None)], fc)
     (r,) = t["results"]

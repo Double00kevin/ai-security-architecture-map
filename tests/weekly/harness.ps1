@@ -24,6 +24,7 @@ $root = Split-Path -Parent (Split-Path -Parent $here)
 if (-not $Script) { $Script = Join-Path $root 'scripts/weekly-check.ps1' }
 $Script = (Resolve-Path -LiteralPath $Script).Path
 $fakepy = Join-Path $here 'fakepy.py'
+$fakegh = Join-Path $here 'fakegh.py'
 $onWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
 $psExe = (Get-Process -Id $PID).Path
 $realPy = $Python
@@ -71,10 +72,13 @@ function New-Fixture([string]$dir) {
   Invoke-Git -C $repo push -q origin main 2>$null | Out-Null
   if ($onWindows) {
     Set-Content -LiteralPath (Join-Path $bin 'python.cmd') -Encoding ASCII -Value "@`"$realPy`" `"$fakepy`" %*`r`n@exit /b %ERRORLEVEL%"
+    Set-Content -LiteralPath (Join-Path $bin 'gh.cmd') -Encoding ASCII -Value "@`"$realPy`" `"$fakegh`" %*`r`n@exit /b %ERRORLEVEL%"
   } else {
-    $shim = Join-Path $bin 'python'
-    Set-Content -LiteralPath $shim -Encoding ASCII -Value "#!/bin/sh`nexec `"$realPy`" `"$fakepy`" `"`$@`""
-    & chmod +x $shim
+    foreach ($pair in @(@('python', $fakepy), @('gh', $fakegh))) {
+      $shim = Join-Path $bin $pair[0]
+      Set-Content -LiteralPath $shim -Encoding ASCII -Value "#!/bin/sh`nexec `"$realPy`" `"$($pair[1])`" `"`$@`""
+      & chmod +x $shim
+    }
   }
   @{ dir = $dir; origin = $origin; repo = $repo; bin = $bin; markers = (Join-Path $dir 'markers') }
 }
@@ -82,7 +86,7 @@ function New-Fixture([string]$dir) {
 function Invoke-Weekly($fx, [hashtable]$envs) {
   $ErrorActionPreference = 'Continue'  # see Invoke-Git
   $saved = @{}
-  $keys = @('PATH', 'FAKEPY_MARKERS', 'FAKEPY_CHECK_EXIT', 'FAKEPY_FLAGGED', 'FAKEPY_NOREPORT', 'FAKEPY_MAP_EXIT', 'FAKEPY_TRIAGE_EXIT', 'FAKEPY_AUTO_EXIT', 'FAKEPY_VERIFY_EXIT', 'FAKEPY_PARTIAL_WRITE', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM')
+  $keys = @('PATH', 'FAKEPY_MARKERS', 'FAKEPY_CHECK_EXIT', 'FAKEPY_FLAGGED', 'FAKEPY_NOREPORT', 'FAKEPY_MAP_EXIT', 'FAKEPY_TRIAGE_EXIT', 'FAKEPY_AUTO_EXIT', 'FAKEPY_VERIFY_EXIT', 'FAKEPY_PARTIAL_WRITE', 'FAKEGH_UNAVAILABLE', 'FAKEGH_OPEN', 'FAKEGH_LABEL_MISSING', 'FAKEGH_BURY', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM')
   foreach ($k in $keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k) }
   try {
     $emptyCfg = Join-Path $fx.dir 'empty.gitconfig'
@@ -119,11 +123,16 @@ function Invoke-Weekly($fx, [hashtable]$envs) {
     $logText = [System.IO.File]::ReadAllText($logFile.FullName, [System.Text.Encoding]::UTF8)
   }
   $marks = @()
-  if (Test-Path -LiteralPath $fx.markers) { $marks = @(Get-ChildItem -LiteralPath $fx.markers | ForEach-Object { $_.Name.Substring(3) }) }
+  $issueBodies = @()
+  if (Test-Path -LiteralPath $fx.markers) {
+    $marks = @(Get-ChildItem -LiteralPath $fx.markers | ForEach-Object { $_.Name.Substring(3) })
+    $issueBodies = @(Get-ChildItem -LiteralPath $fx.markers -Filter '*_gh-issue-create' | ForEach-Object { [System.IO.File]::ReadAllText($_.FullName, [System.Text.Encoding]::UTF8) })
+  }
   @{
     code = $code; out = ($out | Out-String); stages = $stages; logText = $logText; logUtf16 = $logUtf16
     success = Test-Path -LiteralPath (Join-Path $logs 'weekly-last-success.txt')
     marks = $marks
+    issues = $issueBodies
     originCommits = [int]((& git --git-dir $fx.origin rev-list --count main) | Out-String).Trim()
     originFiles = ((& git --git-dir $fx.origin show --name-only --format= main) | Out-String)
   }
@@ -153,6 +162,7 @@ try {
   Assert-That $n (@($r.marks | Where-Object { $_ -like 'm-drift-auto*' }).Count -eq 1) 'drift auto actually ran'
   Assert-That $n ($r.stages.auto -eq 'ok') "auto stage ok (got $($r.stages.auto))"
   Assert-That $n ($r.originFiles -match 'registry/claims.yaml' -and $r.originFiles -match 'maps/v2099.01.01/map.json' -and $r.originFiles -match '-auto.json') 'renewed registry, new map version and auto report pushed'
+  Assert-That $n (@($r.marks | Where-Object { $_ -like 'gh-*' }).Count -eq 0) 'no alert issue on a clean run'
 
   # 2. map check fails: failure must be reported, never success
   $n = 'map-fails'; "scenario: $n"
@@ -162,6 +172,56 @@ try {
   Assert-That $n ($r.stages.map -eq 'failed') "map stage failed (got $($r.stages.map))"
   Assert-That $n ($r.originCommits -eq 1) 'failed map never published'
   Assert-That $n (-not $r.success) 'no last-success marker'
+  Assert-That $n ($r.issues.Count -eq 1) "one alert issue opened (got $($r.issues.Count))"
+  $body = "$($r.issues)"
+  Assert-That $n ($body -match '--label\s+weekly-run-failed' -and $body -match "Weekly run failed \d{4}-\d{2}-\d{2}") 'issue has the label and a dated title'
+  Assert-That $n ($body -match '- map: failed' -and $body -match '- check: ok' -and $body -match 'weekly-\d{4}-\d{2}-\d{2}\.log') 'issue body lists stage statuses and the log file name'
+  Assert-That $n ($body -notmatch 'fake map check' -and $body -notmatch 'fake drift check') 'issue body carries no log contents'
+  Assert-That $n ($r.logText -match 'alert: opened') 'alert logged'
+
+  # 2b. an open alert issue already exists: no duplicate, exit code unchanged
+  $n = 'map-fails-open-issue'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_OPEN = 1 }
+  Test-Common $n $r
+  Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
+  Assert-That $n ($r.issues.Count -eq 0 -and $r.logText -match 'not opening a duplicate') 'no duplicate issue'
+
+  # 2c. gh unavailable: logged, exit code unchanged
+  $n = 'map-fails-no-gh'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_UNAVAILABLE = 1 }
+  Test-Common $n $r
+  Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
+  Assert-That $n ($r.issues.Count -eq 0 -and $r.logText -match 'gh is not usable') 'unavailable gh logged, no issue'
+
+  # 2d. the label does not exist yet: the alert still goes out, without the label
+  $n = 'map-fails-no-label'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_LABEL_MISSING = 1 }
+  Test-Common $n $r
+  Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
+  Assert-That $n ($r.issues.Count -eq 2 -and "$($r.issues[1])" -notmatch '--label') 'retried without the label'
+
+  # 2e. two consecutive failures with the label still missing: the second run finds the unlabelled issue
+  # by its stable title marker and does not open a duplicate (audit round 2, N3)
+  $n = 'map-fails-no-label-twice'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n)
+  $r1 = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_LABEL_MISSING = 1 }
+  Invoke-Git -C $fx.repo reset -q --hard | Out-Null  # drop the first run's local outputs (logs/ is ignored and kept)
+  Invoke-Git -C $fx.repo clean -fdq | Out-Null  # so run 2 passes preflight and fails at the same stage
+  $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_LABEL_MISSING = 1 }
+  Test-Common $n $r
+  Assert-That $n ($r1.code -eq 1 -and $r.code -eq 1) "both runs exit 1 (got $($r1.code), $($r.code))"
+  Assert-That $n ($r.stages.map -eq 'failed') "second run failed at the same stage (got $($r.stages | ConvertTo-Json -Compress))"
+  $store = @(Get-Content -Raw -LiteralPath (Join-Path $fx.dir 'gh-issues.json') | ConvertFrom-Json | ForEach-Object { $_ })
+  Assert-That $n ($store.Count -eq 1) "exactly one open alert issue after two failures (got $($store.Count))"
+  Assert-That $n ($r.logText -match 'not opening a duplicate') 'second run skipped the duplicate'
+
+  # 2f. the open alert is older than the first page of open issues (250 newer unrelated ones): a targeted
+  # title search still finds it (audit round 3, N5)
+  $n = 'map-fails-alert-beyond-first-page'; "scenario: $n"
+  $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_MAP_EXIT = 1; FAKEGH_BURY = 250 }
+  Test-Common $n $r
+  Assert-That $n ($r.code -eq 1) "exit 1 (got $($r.code))"
+  Assert-That $n ($r.issues.Count -eq 0 -and $r.logText -match 'not opening a duplicate') "buried alert found; no duplicate (created $($r.issues.Count))"
 
   # 3. flagged, no .env: triage skipped, exit 3, report still published
   $n = 'flagged'; "scenario: $n"
@@ -169,6 +229,7 @@ try {
   Test-Common $n $r
   Assert-That $n ($r.code -eq 3) "exit 3 (got $($r.code))"
   Assert-That $n ($r.stages.check -eq 'flagged' -and $r.stages.triage -eq 'skipped') "check flagged, triage skipped (got $($r.stages | ConvertTo-Json -Compress))"
+  Assert-That $n ($r.issues.Count -eq 0) 'flagged is not a failure: no alert issue'
   Assert-That $n ($r.originCommits -eq 2) 'report pushed'
 
   # 4. check exits 0 but writes no report: not evidence the check ran
@@ -179,12 +240,12 @@ try {
   Assert-That $n ($r.stages.check -eq 'failed') "check failed (got $($r.stages.check))"
   Assert-That $n (-not $r.success) 'no last-success marker'
 
-  # 4b. auto leaves something for a person: not a failure, exit 3, still published
-  $n = 'needs-person'; "scenario: $n"
+  # 4b. auto leaves something for the owner's decision: not a failure, exit 3, still published
+  $n = 'needs-owner'; "scenario: $n"
   $fx = New-Fixture (Join-Path $tmp $n); $r = Invoke-Weekly $fx @{ FAKEPY_AUTO_EXIT = 3 }
   Test-Common $n $r
   Assert-That $n ($r.code -eq 3) "exit 3 (got $($r.code))"
-  Assert-That $n ($r.stages.auto -eq 'needs_person') "auto needs_person (got $($r.stages.auto))"
+  Assert-That $n ($r.stages.auto -eq 'needs_owner') "auto needs_owner (got $($r.stages.auto))"
   Assert-That $n ($r.success) 'last-success written (nothing failed)'
   Assert-That $n ($r.originCommits -eq 2) 'published'
 
@@ -226,6 +287,7 @@ try {
   Assert-That $n (@($r.marks | Where-Object { $_ -like 'm-drift*' }).Count -eq 0) 'no drift command ran'
   Assert-That $n ($r.originCommits -eq 1) 'nothing pushed'
   Assert-That $n (-not $r.success) 'no last-success marker'
+  Assert-That $n ($r.issues.Count -eq 1 -and "$($r.issues)" -match '- preflight: failed') 'preflight failure alerts too'
 
   # 6. off main: refuse
   $n = 'off-main'; "scenario: $n"

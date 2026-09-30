@@ -6,7 +6,7 @@ Thanks for poking holes in it. Two kinds of contribution are most useful.
 
 Open an issue with the **"Claim is stale"** template. It requires a link to a primary source: the vendor's own docs, changelog, blog or press release, the official GitHub organisation, or the package registry. Aggregators, "top tools" lists and AI answers are leads, not proof, and will be treated as such.
 
-What happens next: the claim is re-checked against your source, `registry/claims.yaml` is updated by a person (never by the AI triage step), a new evidence snapshot is taken, a person reads it and records a review (`python -m drift review`), and the change ships in the next map version with credit in `CHANGELOG.md`.
+What happens next: the claim is re-checked against your source, `registry/claims.yaml` is updated in a pull request (never by the AI triage step), a new evidence snapshot is taken, an AI assessor (Claude) reads it and a review is recorded (`python -m drift review`), the owner decides by merging the pull request, `python -m drift approve` records that approval, and the change ships in the next map version with credit in `CHANGELOG.md`.
 
 ## 2. Code
 

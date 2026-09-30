@@ -1,7 +1,7 @@
 # "Govern it all" references shown in the map footer: the frameworks the controls draw on. Frameworks,
-# not tools: recorded with a primary source and reviewed by hand; not drift-checked (standards bodies
-# do not publish version feeds we can hash without brittle scraping). `drift map build` warns when an
-# entry is past `review_due`.
+# not tools: each is recorded with a primary source and an AI-assessed review of that source (reviewed_by
+# names the assessor). Not drift-checked: standards bodies do not publish version feeds we can hash
+# without brittle scraping. `drift map build` warns when an entry is past `review_due`.
 governance:
 - name: OWASP Top 10 for LLM Applications (2026)
   short: OWASP LLM Top 10 (2026)
@@ -25,7 +25,8 @@ governance:
   review_due: '2026-10-27'
 - name: ISO/IEC 42001
   source_url: https://www.iso.org/standard/42001
-  note: AI management system standard. iso.org blocks automated fetches (HTTP 403); checked by hand.
+  note: AI management system standard. iso.org blocks automated fetches (HTTP 403), so the drift checker cannot
+    fetch this source; its review is AI-assessed like the others (reviewed_by).
   reviewed_at: '2026-09-27'
   reviewed_by: claude
   review_due: '2026-10-27'

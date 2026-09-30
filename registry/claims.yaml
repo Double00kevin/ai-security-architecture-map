@@ -1,7 +1,8 @@
 # Claim registry for the 12-layer AI architecture map.
 # One record per tool per layer. claim/status/owner/assertions/supports are edited by hand after
 # reading the source; snapshot fields and fetched_at are written by `python -m drift snapshot`;
-# the review record (reviewed_*, review_*) is written only by a person via `python -m drift review`.
+# the review event (reviewed_*, review_*) only by `python -m drift review` (an AI-assessed review;
+# reviewed_by names the assessor); approved_* only by `python -m drift approve`.
 claims:
 - id: L01-claude
   layer: 1
@@ -34,6 +35,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:53965c5427b1e128e23868439619485033039499a7f6bc4d1bacf706f27a5c4a
   review_claim_hash: sha256:e69513e09df97aa77fed39b65b7cfc625e1950a60bab39681a8760f88b5d334c
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:b39379fc1c5a4f2f772b54a7422f34ee4f6d6a3c52ad6319b5b846b6ede9553e
 - id: L01-gpt
   layer: 1
   layer_name: Models & Hosting
@@ -63,6 +67,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:2cd1acb34c09a33cac92cbe634fc728e6b4cc7a79cd5859ecfef3c21ef0e2edb
   review_claim_hash: sha256:9d42c0e40902a3a30220828cedcaaa954aeeafad508dd986b50c7ad0f36daf83
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:7ce9dc5fbeff4c85632be77bb4744f7bf999cc0c190cb7fd88dafcfb1f9de259
 - id: L01-gemini
   layer: 1
   layer_name: Models & Hosting
@@ -114,6 +121,11 @@ claims:
   review_outcome: supported
   review_hash: sha256:40a3f3fa1b893b4685d5eb7afa5604e1405d6e51e8dfc66eb87055fe23ab3f28
   review_claim_hash: sha256:d76aa1765525a6fda9802c464da1640ca42f919f6a88ef5d879d7577c699dc85
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b13cba17c461db3d86d3ca582e00e639b0cef159a8a2b13cc0e8413e4cb4fbcb
 - id: L01-llama
   layer: 1
   layer_name: Models & Hosting
@@ -157,6 +169,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:9645c7f6f071af5ff4caa08e61a79fe9697341f2b81d5092523c61aa1fe4d9b3
   review_claim_hash: sha256:9affb06dbe0176a99c0253a7409050c8d10b3c4739dd324262fd03b130ccbbc7
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:7069e3f4a503cf635806cccf64b888bb2e3529749c6d17637697df92fffef9e5
 - id: L01-mistral
   layer: 1
   layer_name: Models & Hosting
@@ -197,6 +213,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:8aa13432347bc63089cf8316e332805de0bbeb87b4f877f6105314b5cf26bfb2
   review_claim_hash: sha256:1bfe341fe979e45a0edf150725c3ef5a14e66574e22f20116c2dcbd2dfa5c4df
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:954cef60d4d5ad49d1802bae27eb3ed871d1ea97cbe16bc6bd193c1d69ca1735
 - id: L01-qwen
   layer: 1
   layer_name: Models & Hosting
@@ -221,11 +241,17 @@ claims:
   supports:
   - availability
   - lifecycle
+  freshness:
+    field: lastModified
+    max_age_days: 30
   reviewed_at: '2026-09-28'
   reviewed_by: claude-code
   review_outcome: supported
   review_hash: sha256:36220fb5bfe60688e41902dc361bcdb863a0004876cb9070d21a12030d758540
   review_claim_hash: sha256:fcf8dd4d13090ae2472b12ae9fcbbfd7cb1dba74a1612716b8b6f61972ca0ca7
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:29b37807d092e074d5ecb0a2855f0dcec0b811a53c992e3ccf57848a5c38e79a
 - id: L01-deepseek
   layer: 1
   layer_name: Models & Hosting
@@ -254,6 +280,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:79c602bca77502e0eba3565534f561e7f47ccc033793fd6df56ee16b228d2de7
   review_claim_hash: sha256:46b431ef9b1e8addb9a238a7f10ae2d51f7d1bae321258bbb6527ec01150952f
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:fd76dbcf4f8d2a7f4fcabf0e9257f38751a7c451595c348a21e7117ccf17d573
 - id: L01-bedrock
   layer: 1
   layer_name: Models & Hosting
@@ -284,6 +313,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:3aa033ac778ef2329efc56efd14ca1a8ab6713215a4101420e925b3e7ccec4d6
   review_claim_hash: sha256:d896cbcafdec47a6a68ff6aabe538e875a3507f154596dee6578288a0b472901
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:9a541e05301f3b55d1b8490a2850eee79c6891fd8dbaa45f572d8fd3247e7c4d
 - id: L01-vllm
   layer: 1
   layer_name: Models & Hosting
@@ -326,6 +358,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:48f6870a8598575725a8ea2d01fb4748bc5051bcab88218a653605a81ff49edd
   review_claim_hash: sha256:1e1522ba4dc5d38cdc0678eb6f17325ed15b14910827fbae294ff2bfc8cf88cd
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:c610e6c5c104209b7317b5ebf57e65c4254bd882c52e90cd47a74ddc9cf4d250
 - id: L01-ollama
   layer: 1
   layer_name: Models & Hosting
@@ -365,6 +401,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:4bba22a49b28d98db79a8e168297e4db35eb7c47380185f25885bfea7181799e
   review_claim_hash: sha256:17af4b9f874a44f90fa683deb342767702ff9ac0bc61ce73d4712f734d3da2d0
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:70c8e30d3f0bd510d5a3312b7d315780ad205f7ef96d0a625e4e60e4445879ac
 - id: L02-litellm
   layer: 2
   layer_name: AI Gateway
@@ -407,6 +447,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:eb86f0098f6474e5fc39b0793dead6c1221845a3acf6b1f90b521f27bcf5c96a
   review_claim_hash: sha256:e48d7899bfd9a273d3699118cac6a72b60d0f85a123b0a62bd2bb57b78bf846c
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:26495d5f8798615d9ab5b5ff373736cfdd0ae9ce72342a8015ed93e53eb4a189
 - id: L02-prisma-airs-portkey
   layer: 2
   layer_name: AI Gateway
@@ -459,6 +503,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:c9d6844982c59cb62db8e66d67e0ae8eb4ed3016414df1f342babb76b1e048f0
   review_claim_hash: sha256:5d4c3c0d698682cb80d6b8b44a0c8c809cfb3a35d16cb9e9b7615c3f678fc7fd
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:6c6004cefa94f6ebcfcab00fdc6820fc71969bed0c0345de1b63ccbd144a3908
 - id: L02-openrouter
   layer: 2
   layer_name: AI Gateway
@@ -490,6 +538,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:d828c7bab54ab1317840994684ef2495662da0695bc4df41f044d2ba031fd4b9
   review_claim_hash: sha256:bf16d1b97f0b18cef2ef3b2cea68c322baa065cb3f902cbc2bc23c1e7c564d9f
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:49ad306aafc69db27aa3a082637dcbc0ecb6595d6a328b5efe53099ed5719707
 - id: L02-cloudflare-ai-gateway
   layer: 2
   layer_name: AI Gateway
@@ -521,6 +572,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:2fcf5110943314c29d3e326e7f4854272282e5baa6c6afe3255afc0843309461
   review_claim_hash: sha256:c72e862b58eb8e09ea597b2e0dfb43d8706e7b5cd473c3d4eaaacc93db84080a
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:f5ae1276a7fcce75a4283cbbb12a9fd27fb2f9c2fec8db48fd23c2f89f4c8cd0
 - id: L02-kong
   layer: 2
   layer_name: AI Gateway
@@ -563,6 +617,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:9bf1d5bad21adff03d25b4ecacedb6dc2e8cd937b93a44d7ee4cf03bec5b40d8
   review_claim_hash: sha256:eb35f34d655c91169fc643e5081362609db668f47bc2eaf06fd72c33339c3993
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:34b78ce10faa46375716c36fee8874d004169f4a9f93e8d5e1afab7b5a58f755
 - id: L03-langgraph
   layer: 3
   layer_name: Orchestration & Agents
@@ -604,6 +662,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:1b246f95155f6b1033a1f88cc6d04e854846f16a3efa7907d81a88e55c36a8a0
   review_claim_hash: sha256:b5d2985fd11e2a29e095f8c83bfd7657dc815d24d7f3cd45b646fbacfc4efef1
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:d595cd94e46b289542e10a6b3d65d9a406ef59963ddb9f1045b4e91005c8f74b
 - id: L03-claude-agent-sdk
   layer: 3
   layer_name: Orchestration & Agents
@@ -648,6 +710,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:4419cbefe11cb4b942c2fd551794bfce764c9830f1b50bdb714f2fcf49812f88
   review_claim_hash: sha256:8ad2a60c63ce202a8ec11020f42f47bd8ab57e60b07958fd85687f27cc394d83
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:1ee571c466d8a16e7719f18d5c64b1887b3b8bdd9a395d1bc0c3769b28e1be74
 - id: L03-openai-agents-sdk
   layer: 3
   layer_name: Orchestration & Agents
@@ -688,6 +754,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:8a6523b5b96b6ef8a79c0fdebfcaaab58565db3f1a266248fc69fc07b67a6e5b
   review_claim_hash: sha256:03d9cec4f98864e7a64caf2fc7aeebad9de61a872f6a7198b9a4ae9a16396e77
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b11d1aef8e9a29feabbd4ebb724455dbe93a4f82bb844325c24699e6577ab53c
 - id: L03-google-adk
   layer: 3
   layer_name: Orchestration & Agents
@@ -729,6 +799,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:98abf5c731faa8d80e3bfc883c531a6ec0df233d0b8df68b0ae714e4d8463be5
   review_claim_hash: sha256:425c37b328d23642387449b1384b3e4a7b2eb52e857967d504cd9ccc2f67f14f
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b8ab87bc7ee496f2c2963213b59dc7cf904aed4de20f5f3063cf42f4a191af0a
 - id: L03-crewai
   layer: 3
   layer_name: Orchestration & Agents
@@ -759,6 +833,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:bb0b5ffdf046ec6fd24450e1c9ae86e68f5f2d08d0d5f5da1667c16124a6fcc2
   review_claim_hash: sha256:7b939e6fdca3a4819181ff237c75fd685e435c84693ed325fb615b03d79e9ad6
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:34f12813f35e8ac2dfec604117f588f244bcb768e92d70d621a89fb2618fd36d
 - id: L03-microsoft-agent-framework
   layer: 3
   layer_name: Orchestration & Agents
@@ -790,6 +867,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:62eb895ec3c202ac386866879d37fe8499451131c08891cecb52c9e38e4a70fc
   review_claim_hash: sha256:9c6115d24fecf61a6227d0ff61b4ec25cb1c09a568992869f51b2426ccbba3fa
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:6a6210fcb2ffddf3248c6aa41c9247a6a37f2ad7d4b000f989a2a9c773ed8345
 - id: L04-mcp
   layer: 4
   layer_name: Tools & MCP
@@ -831,6 +911,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:a2924cd0bcd8856a84a897c7aee5a22aa966f2b208a2f749f4a93baa7a8baa0e
   review_claim_hash: sha256:42652921bb85a292f430e0f4b0e49a211aaf1787d66aa6e53b1fb5c91c948b63
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:f712190d416e4fd3b9c602553e696078fb5e16ebd8db95855c860d2a3ecc4179
 - id: L04-agent-skills
   layer: 4
   layer_name: Tools & MCP
@@ -862,6 +946,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:5b8015a547891077d6489162756f67bdd13ddb284719f354383bb53a5cc066fd
   review_claim_hash: sha256:d3d511b46a37865773f2a4b8b8b493cda3ba0610313147d32265701ef885c758
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:468274d84bba7c4a273dab1a52b11bca94487443a491372fa0127461a99b40e1
 - id: L04-fastmcp
   layer: 4
   layer_name: Tools & MCP
@@ -892,6 +979,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:9cec59a36e29be4b5a42c2000ac6263fea04bef447c2aa4e4e9f27ed23f74128
   review_claim_hash: sha256:1e8e8002cb3485fc8079491bbf00b6a1c4f51dbe9c2c0f5bb04a4fe08bc6e2b4
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:cfb6d85ebc0873856b0b35b73449df0ce6b322557b47f4cf930ff1372ddc6595
 - id: L04-composio
   layer: 4
   layer_name: Tools & MCP
@@ -932,6 +1022,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:f7a0d4f8749b8c129012ae5a83510bf57121613d297c7095fa9d2161304bc117
   review_claim_hash: sha256:f4a706c33e3d0d95a22b52b205e345fe5cebc49d8c32c456ad4957ece05f1895
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:70a7df5b012194ae496dd3c70137b4580144aca68ae18e6abfa3e8c1337c7c3d
 - id: L04-arcade
   layer: 4
   layer_name: Tools & MCP
@@ -963,6 +1057,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:b740a2d2174468f33ae10989039890c86458976e96c3d9a1079be535441f778a
   review_claim_hash: sha256:8f288a53992844f689a135493ee29d597c80d7505a2164f87f90fcb193d51900
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:e0f0942b7a05346f03c4ba519392ad101a9e36c3d5ea17b3e74113a4f2118b1f
 - id: L05-unstructured
   layer: 5
   layer_name: Ingestion
@@ -994,6 +1091,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:091198016441b370829ecbf84445a2683fd665f3e8f588981fb4522de2bdd731
   review_claim_hash: sha256:184a8ed25e037c47ca188aaa58c15275d0b8ddb3bf10d69eb7d89ac4f7c36ac1
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:a2b396fcc758ac9715ab002b8367f803c56ce7dd3b09cc44522733c37f0ca970
 - id: L05-docling
   layer: 5
   layer_name: Ingestion
@@ -1024,6 +1124,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:956e8a4968a4b645c9cf424e0fc73e0dc66571891de0da388015320f8787e271
   review_claim_hash: sha256:8efb6522231e207636bd1d99ef0f5799fe16bdd25647d20766ce9be87d46eadd
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:bad464aa6a7e4217b3c0b1bbbc9eab4ce464d3d93e947ad02a80b90c30fb2e38
 - id: L05-llamaparse
   layer: 5
   layer_name: Ingestion
@@ -1068,6 +1171,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:42319ee4e15e60100bdbe8da527f7d602a3f8b7fc618c2abccb549a16498e90d
   review_claim_hash: sha256:7856abeea9ebf8e8f62eb3a3dd3da6cf4dcee393f219296d295aa7963742bb70
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:84bfc1b6d9b55da87e0a5df452fe84249f724f4091f3829feec70f5b512b9a81
 - id: L05-firecrawl
   layer: 5
   layer_name: Ingestion
@@ -1098,6 +1205,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:1377f75fb00b76970993b9b1c78bb1b7e15d519596e73a483db20623525732d8
   review_claim_hash: sha256:6765b40ffeab9eaff8669400ee9c72fdf56c336337b9a432e5257fcc38ca6b7e
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:59b559aed8c4011be2cdd3940c30b990941e8250b97b52cb9634943fe1557621
 - id: L05-airbyte
   layer: 5
   layer_name: Ingestion
@@ -1147,6 +1257,11 @@ claims:
   review_outcome: supported
   review_hash: sha256:76825129324845585ac8e80fe4ca7b67b9d843b67030bb83384e6f379fa6c094
   review_claim_hash: sha256:88528d91d24426f5a578f99a2d242e5d8d9746ae340ffe4f927595a4eb1edf00
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:7d864f711dab3f10d79ed09f72119f9c3d241f390ae36bd460132381479291b2
 - id: L06-voyage
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1220,6 +1335,12 @@ claims:
   review_outcome: supported
   review_hash: sha256:9b6bb8fe673f3f4ba5c86f6e6a366ca3b0c1364b08b690ac7981dcf223a78888
   review_claim_hash: sha256:96903a23fbeed5bdd93d09bfaab72557e60d7ad256219532af91505be5776580
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:05b460448a6319e706969eaaa88f466582a7ba925b7e76a5742fcc41d7c79338
 - id: L06-cohere
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1259,6 +1380,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:f18ed27f20dbd34e059e0b0d76fc80146722e3b77dc3691af8825ce302240c6b
   review_claim_hash: sha256:2cda7f9301c208fe9f09b324732db031cc7d74da2340f2bc14d30d4a041eaa36
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b0d9f0630a73b92b17063cb05ef5051ae17038122553afe60a22355ca116b7dd
 - id: L06-bge
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1298,6 +1423,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:b2c9417f9260fb8131aeb1c79ff095fa7bba306e2ce0ab407d64aac3c14f7a90
   review_claim_hash: sha256:18ccf741185158007e938cecddda5e2baf2e3181272856b15c98ac032cc2d845
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:127380f681054babbf802f024e0a2743d0c77bcbf1dc6f755a9f14c4b9bfc515
 - id: L06-pgvector
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1346,6 +1475,11 @@ claims:
   review_outcome: supported
   review_hash: sha256:3d0387ae01f070df2a6b45f22d5588018377ce1268e2514984ba53a953b5d920
   review_claim_hash: sha256:a31fb2bf89be86fd04d7824a53e9ab8174c78bd4d2810917404cd693d6c0215e
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b1b0a942f64c2dcaaa6a84302b05195b03b3e1154167c9abeefdd111eceaf77b
 - id: L06-pinecone
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1386,6 +1520,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:edd3a6c90de87de52a9440a18e77014c217a9ddc47380dd50b20e847eca537ea
   review_claim_hash: sha256:52569943220f1c36654b43c1f0e01b8e3b8a0e1c28b9c39a16f1941830cdcdff
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:82da003e064ae17895105ca13183a79d229c1fdf6933189ece9aa3916032b96c
 - id: L06-qdrant
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1425,6 +1563,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:6b44779c1011260f055e3d5a4f7ff14b5f7f5d9d7fd81d5549222b9e122c8bc7
   review_claim_hash: sha256:74aaeefde3d009fd6a82ff60f28cec0f71ac5f3f90db3fa665d591ff9a23af6c
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:da39978e930a20def8db62265b7e84f1b49cceed1fe8f3dd008eee9c65a60efd
 - id: L06-weaviate
   layer: 6
   layer_name: Embeddings & Vector DB
@@ -1464,6 +1606,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:28d7773286f7d1d07b1a06450d4b79f2a51b165dc3000b419a0ec5062465e0a1
   review_claim_hash: sha256:c1ba32d3ccaadd778f61293e75a576a7699d831b7ef2bab6633ea069dae8762a
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:42241354839f4d89070caf09465d1dda0c7e95091dae2db6830ae57f0c0f34e5
 - id: L07-llamaindex
   layer: 7
   layer_name: Retrieval (RAG)
@@ -1493,6 +1639,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:dcb4064e77e9036ce2295d084b7a8a1b889a01ef0d8c90276558a56dd7d11901
   review_claim_hash: sha256:797b6ab6aef458a60dbadcca69ac30df389d005ba45dfcabe66a7e00bff85919
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:2970ebb17b4b15ec4dbed9a434e27792c5dafe3421d530194c827a99f60440f1
 - id: L07-langchain
   layer: 7
   layer_name: Retrieval (RAG)
@@ -1522,6 +1671,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:39a8bb5fd28d24c39bb72d1c29290d10fa510785afcd7423ec15b4539fffce3a
   review_claim_hash: sha256:81166f6be6dccbf1aae72c868f9e69122cc0ee27206e80657b81a57230bc752c
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:5f07bd334ac3ec9e1acdd6c50f70e77c6f547a3ccb92609556e3a4edb2754f44
 - id: L07-haystack
   layer: 7
   layer_name: Retrieval (RAG)
@@ -1553,6 +1705,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:d5b091df4a9b2b88bc062b1d48a373966a94bd6464222f3b89d47ce53adb3f44
   review_claim_hash: sha256:e78f668cd748c82e347293cb9077a42de1da9f0c7c6eb0f45cf9c07df5d0bb90
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:bc080f7a297d5a613d785bd095d0849c9ee707c31bcef14b8da0bbc2e2a6e510
 - id: L07-graphrag
   layer: 7
   layer_name: Retrieval (RAG)
@@ -1584,6 +1739,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:221d941e4dfd4a5af30cb0dceaed5781b8f3da7ee5b127153426ae1ee6293315
   review_claim_hash: sha256:083d047f20ba53354ba21be93642b4e6ad05d6570e730e885a8880af17fde3c6
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:9a3ac07741c6a1e7d05fe2ba1ef1ddebe938f6ee860d0b0d1101f2099e667ee3
 - id: L07-cohere-rerank
   layer: 7
   layer_name: Retrieval (RAG)
@@ -1613,6 +1771,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:2c9228fb09eaa863f42618ce2c804864f59a88b132cdbd0bbc40678cb0acdcae
   review_claim_hash: sha256:ee9dd6c7734e0082db6e0e0b3ec70cf41d5fef68c39eb9955226ffc64fcb3041
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:9c4e4ccb513de6d7aa44141ad56d70c1a6b1cc384ed92c48e67761c08b2ca287
 - id: L08-mem0
   layer: 8
   layer_name: Memory
@@ -1642,6 +1803,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:7ed14c4db87adcc39cf2bee2f9af4ed8162ac87526defa2f15c769396fd7efa8
   review_claim_hash: sha256:904a4b6ca37d2951d9b7645e8b3e09b436159379c9d9fa25e37e32af3c370024
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:2172c75826972803db0df1f25c9659537d0a4c234b4ed82fb5dd30824adb1c00
 - id: L08-zep
   layer: 8
   layer_name: Memory
@@ -1696,6 +1860,11 @@ claims:
   review_outcome: supported
   review_hash: sha256:5d515bbb8c483c38d988ddb0075562076a2c79eb39c47943166984a6ed634711
   review_claim_hash: sha256:ee876c97fdf67903559fb4d45f1d94b11034309a70414e6c0b7884c7483a2e66
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:440c527e9fdb3fc079cda1fc500635b279902a2096af40dacb4efd690b3f6c1d
 - id: L08-redis
   layer: 8
   layer_name: Memory
@@ -1736,6 +1905,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:8cd5dc42372eaa6dd25fc5dcb82239b801d3ae538dde7455f7795eb2968ad41a
   review_claim_hash: sha256:9d16d3caddb4f78560c91e94bd33aa0fcd93abb93c60f84d24378a68fb5db420
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:c545b597780855d15526cbb75fc58840bed55975862f00b32183f825274f16aa
 - id: L08-neo4j
   layer: 8
   layer_name: Memory
@@ -1777,6 +1950,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:a8762b85ff912a7bc834da594080cc564a528014ea73b70b582ffa735fadbc56
   review_claim_hash: sha256:cfce0fe1400ced6285ab4195fc526c5b03af6c5d41f92217cd0dc4719897aba1
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:0585324ca5398320205d96f8e0dc1238f1a4ed3557ecd0e622548cb5102e3b3d
 - id: L08-weaviate-engram
   layer: 8
   layer_name: Memory
@@ -1807,6 +1984,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:f14b324c52ed6252602368d70eedc45f67a156db684fac913e96a2928e190c9a
   review_claim_hash: sha256:59437f28bbda909deb7fab0c069789de7636e4864bdf0d4d9211ed894dfa1159
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:4616212f346b67207bb334bee461c16529c453f39c6161812ad9304d6de020e6
 - id: L08-letta
   layer: 8
   layer_name: Memory
@@ -1849,6 +2029,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:efee37b4ff0f4877cb12e24659e0304b998c2a4ac90912bd8e195b464f983bf8
   review_claim_hash: sha256:48e3be7849d56b0ccf29c0bf9c9edf3c417ef41568871b151000600d795153f0
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:6fc2ef68217a3096abe8c7eab46e64c70d0359c5f0b5c3895520c1f8b1288a52
 - id: L09-nemo-guardrails
   layer: 9
   layer_name: Guardrails
@@ -1880,6 +2064,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:99b9b06a580ef356bd475667caeedcc2745cf9c107c46ad6c304d69b0c08263b
   review_claim_hash: sha256:cfb5beaa032839fd76d5001b5c9d9961d9f732d457bbbf938d904388aa250707
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:00bf813545e5fabc479de5701f8a91e86065280ba89940245378cd6359cb65b3
 - id: L09-llama-guard
   layer: 9
   layer_name: Guardrails
@@ -1911,6 +2098,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:b0a22d18dad8389820e10a3f0dc9531aa50241b96125daaba5a89001a79fbf3a
   review_claim_hash: sha256:b57ee6f416b44c870a625a1a5de186e7806b7328b1bc52b76c187a3412fdfe50
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:5e8bbff2f211ce991138554f3fb587e2905f173de9006ec76d66ce50da536729
 - id: L09-llamafirewall
   layer: 9
   layer_name: Guardrails
@@ -1942,6 +2132,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:2223d6088763d279c6c5c7462ff889b7951a0c336a3002c289bdb8a935da2906
   review_claim_hash: sha256:9f6f95bc6d735be1951572ae0b9c0005ac7c1827c6e3e02f4373137fb3507353
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:37f02ef6796c0345be1e9486f24281eb5663e9d398bb2b7200e3483535df2592
 - id: L09-presidio
   layer: 9
   layer_name: Guardrails
@@ -1982,6 +2175,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:87802fc5723e3c23a033dc925244e92c40bbebc3ced33027ad5bda13a4cfcb0e
   review_claim_hash: sha256:22215728ea1355d56247059f86dd4d85448257cfbb7e3654866abecdd8d47cc4
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:078cb468a59e20508fdabf6af3ee328f4694eaaaa0b6935c15819cbe5b498cfd
 - id: L09-check-point-ai-guardrails
   layer: 9
   layer_name: Guardrails
@@ -2030,6 +2227,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:593b601e2cbeeab356efa2cc010845dc7bd4ce8be89009e738428cfb364f1022
   review_claim_hash: sha256:dbb7c733f0f83392dcb3d63dec8c3474c37ce2e9e2626ce4b175a158d76dcc91
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:89a86851b4c38c355634939429aee0c1006087cac7f2c8be1e4c9155a57b79e5
 - id: L09-guardrails-ai
   layer: 9
   layer_name: Guardrails
@@ -2059,6 +2260,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:e27caaeed5873daed62428a933e52b8aa3230942c34550130a503c1a99c66e33
   review_claim_hash: sha256:d64b8986bbcb108f2ae39551577b6dd1ff3d8fe86485084a16487c728f5563f9
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:f3bab9ecb230904eb175d701d01ada9c13d3e7caae58c3029f4bc5bd6b5fd96c
 - id: L10-promptfoo
   layer: 10
   layer_name: Evals & Red Team
@@ -2118,6 +2322,11 @@ claims:
   review_outcome: supported
   review_hash: sha256:712d242c568fd0afcf1813b0e292a7bfccf1239799cf992dac81404d893020ca
   review_claim_hash: sha256:ed82abee9fe51fca6528983d23c8bbe11adc02bb67151d96082370fffab755b4
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:0f98858a3554438552796cf6f29be800d48735b75cfa374a741edc894b3cca99
 - id: L10-deepeval
   layer: 10
   layer_name: Evals & Red Team
@@ -2147,6 +2356,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:bb6261e04538bcba7e0a396958931b8dfc4f5b48767a4f29e772baed4e057c18
   review_claim_hash: sha256:e01ca64200c666290be58e6cded48df821ca0f364caace19fa3b5b95d78b9219
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:5486379d300967a323abe0473167aa4324f992f93b38b54a6e1ca4b5e27b6eec
 - id: L10-braintrust
   layer: 10
   layer_name: Evals & Red Team
@@ -2188,6 +2400,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:1ff5742e67b8abebcb76dfa444af2556faa68eea6f1b2695750bd2a246ca2d9f
   review_claim_hash: sha256:3f308f48db59a7f16f83a6781b0dc4e65ec8041e108aa8fe64e88a4b655afee7
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:723e9b2c0f0721c4e486cc05675adba186bb2bedd8cccd1da9ac5c8b888a08e7
 - id: L10-inspect
   layer: 10
   layer_name: Evals & Red Team
@@ -2218,6 +2434,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:41604775d38d1f652cc9b988c01bfd2815f507238539dfee5ea9b197fc9324e9
   review_claim_hash: sha256:e999483c030f86afe985236ff5f26a3a95093d2de38935c763cc186e83320b51
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:374d1091ee2d6c1140948c11c783dfd07b67cb123c83883676f54e6a671acbb9
 - id: L10-garak
   layer: 10
   layer_name: Evals & Red Team
@@ -2247,6 +2466,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:ab46071fb60be69f190a5f229a10174935dfb79b607fa350a320cb74e6c0c42f
   review_claim_hash: sha256:488db2be907cd83327a7cf724459f5c3ab0bece76e60e0dda6807cffd319d789
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:74ba9845c8ceaa08c5cf39f479ad5765f0c14227a0247a357e4c6fbaaa4b88ca
 - id: L10-pyrit
   layer: 10
   layer_name: Evals & Red Team
@@ -2278,6 +2500,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:013b81e9d372b248a86855c5248975ce868f428f4f6cbdc3564f060e1eaaddb1
   review_claim_hash: sha256:2612f004b01caf73756238cd2e658d9c0a80485172f4cfb33a72c15f07200022
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:e0591496da57742856f22426d99c1e50f0b0f1aca84cbaced2f60b1d831c7fd8
 - id: L10-ragas
   layer: 10
   layer_name: Evals & Red Team
@@ -2306,6 +2531,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:5c5a868aaf520f59d5703d11c0448e176b1eb38d0e2ce00bb77aefdc5cad2068
   review_claim_hash: sha256:d7a1a297b4ac341f355d4439bce2bcae03aed8099c20fa49a389cc3b0cbd392a
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:5831d4a5049b3e676574be21bcbaf14679a7276fba49afd21f99c6495c4f2daf
 - id: L11-langfuse
   layer: 11
   layer_name: Observability
@@ -2376,6 +2604,12 @@ claims:
   review_outcome: supported
   review_hash: sha256:3a6a9d8165d59a6e433ee9a82be8200c27f9aea556ad8c217539f3752704fb29
   review_claim_hash: sha256:5c8c5a3915c9245b13d30d7145502b37f94e28784f33307ddcf0c1246d211ad0
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:f3fac2f60f0ed4b7c7b7603a391e1094857ec2f571f13f4b463f5692b67be2d6
 - id: L11-langsmith
   layer: 11
   layer_name: Observability
@@ -2406,6 +2640,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:f9bb5148b674aaaa9553219010e59111bbedc9a4869d18ce6d8eb9bb6eae77c1
   review_claim_hash: sha256:84fca6b3bcb3a07671e1916812b6946856e4e67a033488bcf2ff840192a7d010
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:bfb8e6ef7b4365ed262c9c3fa6bf5717de29c7394bbed7a7eff2a821fb48c47c
 - id: L11-arize-phoenix
   layer: 11
   layer_name: Observability
@@ -2435,6 +2672,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:090eeb68b0ebd11679409ee7e357749b1be1f08fea8ccf86d11a2804fbd9414b
   review_claim_hash: sha256:e877398703b94a71510912cecda7f2749ffbf23c16c204faf859ec3dc1aa1f0a
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:db864286cb1b409d46c1cb5101a3c44ba0c87d33d96177a2837068bee8028a5a
 - id: L11-mlflow
   layer: 11
   layer_name: Observability
@@ -2477,6 +2717,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:433e840c9d3d916005351618e33395ec0a3dbd37c011d3b8ac46fa87be199611
   review_claim_hash: sha256:98c36e48aacbc3866ca0239f9a2bc221eefb78226a856933805fde30dc3cf39e
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:2b2b69cf31d835ed5939846268428593cf87706d8b233622d3908fd996f78d2b
 - id: L11-opentelemetry
   layer: 11
   layer_name: Observability
@@ -2519,6 +2763,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:c33106764b12044a3a8336c3ad1d25df38dc0f89f02d53570d34b6e2d5bf913e
   review_claim_hash: sha256:1380befe32620b9b066ae58529091f34269f01431f57616c7e1b5963ea75ba77
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:c2020c6c122f496fe0a168bb49955e798dc1828d43e628a3b7a66b636436684b
 - id: L11-helicone
   layer: 11
   layer_name: Observability
@@ -2549,6 +2797,9 @@ claims:
   review_outcome: partial
   review_hash: sha256:0696a90edd8b3ace004d361de6821a3710ef088f2faef86c198a98164a29aff7
   review_claim_hash: sha256:6e92d62bf914fdedd2b747da6a40ddc76c39dde2983294833f23b2ec2038ef75
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:7fbd49e31f0256a598af8cd7cc074c8ef3dbead27675cb1c15e1e69bd5ffea47
 - id: L12-n8n
   layer: 12
   layer_name: Automation
@@ -2588,6 +2839,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:8e2a8ef2a279cd2da99fd342b57b3b8a4d98cf5c0e7e8e7716ae5baed43e2d29
   review_claim_hash: sha256:613327ddb1a87fa107fcdc6ebd6323db6df03d13bb2218099293c5de79ac98b5
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:d63506c850b3ca457f76b90ae3ca7a2e2e7f10f868de8877e032e6494d00ab57
 - id: L12-temporal
   layer: 12
   layer_name: Automation
@@ -2631,6 +2886,10 @@ claims:
   review_outcome: supported
   review_hash: sha256:6eab015276e576422219e5f5d668c75386085975532de818d0fc719bf6c639f5
   review_claim_hash: sha256:00e4a89e0956d6550438a6f74d34fca15f5e2d953e8f301ca44ee9efade2fd9f
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:09cc2406322a64bc42edd8f31f350e817816d9bec8b40b4fc78ca2b0f9cfca2f
 - id: L12-airflow
   layer: 12
   layer_name: Automation
@@ -2662,6 +2921,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:e6c686fe762e4af05ec1511dc9d9ecb1d61f3f7461773e9910f68cbbee7969f8
   review_claim_hash: sha256:a64829bd885ad4e7ff8060e54dfefa453967042c6855f0642a4577105295e3fa
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:fad48902a9a45235ea03f918c19719b6c330727df86447f3c36b8545c0381db4
 - id: L12-prefect
   layer: 12
   layer_name: Automation
@@ -2691,6 +2953,9 @@ claims:
   review_outcome: supported
   review_hash: sha256:edba7292ea5ccd20700ab045cf3b2017216b9c2927036406e5ebf9bc1f551da2
   review_claim_hash: sha256:0ea4c63f7bc61321627b1bdf1b4d779d7e7bd4adfdbfee58e75ab1ea163349a8
+  review_fetched_at:
+  - '2026-09-28'
+  review_event_hash: sha256:f2bb1872b4f757f844c42c8704f44f4d5663343fd6bbd579e874a1399ddac39a
 - id: L12-make
   layer: 12
   layer_name: Automation
@@ -2730,3 +2995,7 @@ claims:
   review_outcome: supported
   review_hash: sha256:96d9af078e2d1899df8d352968d8bc1167e7abbfc572e9cba01c9e0bb079bff5
   review_claim_hash: sha256:b9c9eff4a1794864e506d0c2e9176be5bd8ffee5252ebd63df699f335aabde45
+  review_fetched_at:
+  - '2026-09-28'
+  - '2026-09-28'
+  review_event_hash: sha256:b41941ab02923094e78729c16ac474b61022e440d29fe50d5fecb271dadc2c0a

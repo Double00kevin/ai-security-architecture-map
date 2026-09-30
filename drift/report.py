@@ -23,6 +23,7 @@ REASON_LABEL = {
     "version_bump": "new version",
     "section_changed": "page section changed",
     "lifecycle": "LIFECYCLE SIGNAL",
+    "freshness": "TIME-BASED CLAIM NO LONGER HOLDS",
     "stale": "review due (none valid in 30 days)",
     "error": "could not verify",
     "unresolved_review": "REVIEW NOT SUPPORTED (unresolved)",
@@ -119,7 +120,7 @@ def render_markdown(findings, s: dict, meta: dict | None = None) -> str:
     if meta:
         lines += [f"Run `{meta['run_id']}`, registry `{meta['registry_sha256']}`, "
                   f"commit `{meta.get('git_commit') or 'unknown'}`.", ""]
-    lines += ["Flagged claims need a human re-check. This report never changes the registry; "
+    lines += ["Flagged claims wait for the owner's decision. This report never changes the registry; "
               "update a claim only after reading the source.", ""]
     flagged = [f for f in findings if f.flagged]
     if flagged:

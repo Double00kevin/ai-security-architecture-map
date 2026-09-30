@@ -10,7 +10,7 @@
                                   needs .env with the API key; budget-capped)
   3. python -m drift auto        (renew routine claims from this run's report; build and render a new
                                   map version when content changed or the published one is near its
-                                  re-check deadline; anything else is left for a person)
+                                  re-check deadline; anything else waits for the owner's decision)
   4. python -m drift map check   (is the newest map still valid?)
   5. publish: commit only reports\, registry\claims.yaml, maps\, README.md, MAP.md and CHANGELOG.md,
      and push with an explicit refspec HEAD:main
@@ -22,6 +22,14 @@
 
   Exit code: 1 if any stage failed; 2 if preflight refused to run; 3 if something was flagged and
   nothing failed; 0 otherwise.
+
+  Alert: when any stage failed, the owner is told through a GitHub issue opened with `gh issue create`
+  (label weekly-run-failed, title "Weekly run failed <date>", body = stage statuses and the log file
+  name; never log contents or secrets). No duplicate is opened while an open issue carries that label or
+  the stable title marker "Weekly run failed " (so an unlabelled fallback issue is found too); both are
+  targeted server-side queries, so an old alert is found however many issues are open. If gh is
+  missing or not authenticated, that is logged and the exit code is unchanged. Create the label once:
+  gh label create weekly-run-failed (without it the issue is opened unlabelled).
 
   README sections "How a claim is checked" and "Security posture" describe the rules this job follows.
 
@@ -81,8 +89,51 @@ function Save-Status {
   $doc = [ordered]@{ date = $stamp; finished = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); stages = $status }
   ($doc | ConvertTo-Json -Depth 3) | Set-Content -LiteralPath $statusFile -Encoding UTF8
 }
+function Open-FailureIssue {
+  # Tell the owner. One open issue per failure streak; the body carries statuses and a file name only.
+  $label = 'weekly-run-failed'
+  $titleMarker = 'Weekly run failed '  # stable prefix: finds an unlabelled issue opened by the fallback below
+  $gh = Get-Command gh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $gh) { Write-Stamped 'alert: gh not found on PATH; no issue opened (exit code unchanged)'; return }
+  $ghExe = $gh.Source
+  $global:LASTEXITCODE = -999999
+  & $ghExe auth status *> $null  # its output names the account; never logged
+  if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: gh is not usable (auth status exit $LASTEXITCODE); no issue opened (exit code unchanged)"; return }
+  # Two targeted queries, filtered on the server, so an old alert is found however many other issues are open:
+  # any open issue with the label, and a title search for the marker (checked locally for the exact prefix).
+  $open = 0
+  foreach ($query in @(@('--label', $label, '--limit', '1', '--json', 'number'),
+                       @('--search', "$($titleMarker.Trim()) in:title", '--limit', '100', '--json', 'number,title'))) {
+    $global:LASTEXITCODE = -999999
+    $raw = (& $ghExe issue list --state open @query 2>$null) | Out-String
+    if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: cannot list open issues (exit $LASTEXITCODE); no issue opened"; return }
+    try { $parsed = $raw | ConvertFrom-Json } catch { Write-Stamped 'alert: cannot read the open-issue list; no issue opened'; return }
+    foreach ($issue in $parsed) {  # foreach enumerates the array on Windows PowerShell 5.1 and 7 alike
+      if ($query[0] -eq '--label' -or "$($issue.title)".StartsWith($titleMarker)) { $open++ }
+    }
+  }
+  if ($open -gt 0) { Write-Stamped "alert: an open '$label' issue (or one titled '$($titleMarker.Trim())') already exists; not opening a duplicate"; return }
+  $bodyFile = Join-Path $logDir "weekly-issue-$stamp.md"
+  $lines = @("The weekly drift run on $stamp failed.", '', 'Stage statuses:', '') +
+    @($status.Keys | ForEach-Object { "- ${_}: $($status[$_])" }) +
+    @('', "Log file: logs/$(Split-Path -Leaf $log) on the machine that runs the job. It is not attached; this issue carries no log contents.",
+      '', 'Opened by scripts/weekly-check.ps1. Close it once a weekly run succeeds.')
+  [System.IO.File]::WriteAllLines($bodyFile, [string[]]$lines, (New-Object System.Text.UTF8Encoding $false))
+  $title = "$titleMarker$stamp"
+  $global:LASTEXITCODE = -999999
+  & $ghExe issue create --title $title --label $label --body-file $bodyFile 2>&1 | ForEach-Object { Write-RunLog "$_" }
+  if ($LASTEXITCODE -eq 0) { Write-Stamped "alert: opened '$title'"; return }
+  Write-Stamped "alert: gh issue create with label '$label' failed (exit $LASTEXITCODE; does the label exist?); retrying without it"
+  $global:LASTEXITCODE = -999999
+  & $ghExe issue create --title $title --body-file $bodyFile 2>&1 | ForEach-Object { Write-RunLog "$_" }
+  if ($LASTEXITCODE -eq 0) { Write-Stamped "alert: opened '$title' (unlabelled)" }
+  else { Write-Stamped "alert: could not open an issue (exit $LASTEXITCODE); exit code unchanged" }
+}
 function Complete-Run([int]$code) {
   Save-Status
+  if (@($status.Values) -contains 'failed') {
+    try { Open-FailureIssue } catch { Write-Stamped "alert: failed to open an issue: $($_.Exception.Message)" }
+  }
   Write-Stamped ("stages: " + (($status.Keys | ForEach-Object { "$_=$($status[$_])" }) -join ' '))
   Write-Stamped "=== done (exit $code) ==="
   exit $code
@@ -94,7 +145,7 @@ function Get-GitOutput([string[]]$gitArgs) {
   return ("$out").Trim()
 }
 
-foreach ($helper in 'Write-RunLog', 'Write-Stamped', 'Invoke-Native', 'Save-Status', 'Complete-Run', 'Get-GitOutput') {
+foreach ($helper in 'Write-RunLog', 'Write-Stamped', 'Invoke-Native', 'Save-Status', 'Complete-Run', 'Get-GitOutput', 'Open-FailureIssue') {
   $resolved = Get-Command $helper -ErrorAction SilentlyContinue
   if (-not $resolved -or $resolved.CommandType -ne 'Function') {
     Write-Error "helper '$helper' resolves to $($resolved.CommandType) '$($resolved.Definition)', not this script's function; refusing to run"
@@ -156,7 +207,7 @@ if ($flagged -gt 0 -and $check -ne 2) {
     $code = Invoke-Native python @('-m', 'drift', 'triage', '--report', $newest.FullName)
     if ($code -eq 0) { $status.triage = 'ok' } else { $status.triage = 'failed'; Write-Stamped "triage exit code: $code" }
   } else {
-    Write-Stamped "triage skipped: no .env (flagged findings stay untriaged for a human)"
+    Write-Stamped "triage skipped: no .env (flagged findings stay untriaged for the owner's decision)"
     $status.triage = 'skipped'
   }
 } else {
@@ -164,13 +215,13 @@ if ($flagged -gt 0 -and $check -ne 2) {
 }
 
 # ---- 3. auto: renew routine claims, publish a new version when needed ----------------------------
-# Runs on this run's full report even when some sources errored: those claims are left for a person.
+# Runs on this run's full report even when some sources errored: those claims wait for the owner's decision.
 if ($newest) {
   Write-Stamped "python -m drift auto --report reports\$($newest.Name)"
   $code = Invoke-Native python @('-m', 'drift', 'auto', '--report', $newest.FullName)
   switch ($code) {
     0 { $status.auto = 'ok' }
-    3 { $status.auto = 'needs_person'; Write-Stamped "some claims need a person; see reports\*-auto.md" }
+    3 { $status.auto = 'needs_owner'; Write-Stamped "some claims wait for the owner's decision; see reports\*-auto.md" }
     default { $status.auto = 'failed'; Write-Stamped "drift auto exit code: $code" }
   }
 }
@@ -240,5 +291,5 @@ $failed = @($status.Keys | Where-Object { $status[$_] -eq 'failed' })
 if ($failed.Count -gt 0) { Write-Stamped ("FAILED stage(s): " + ($failed -join ', ')); Complete-Run 1 }
 (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') | Set-Content -Path $successFile -Encoding UTF8
 Write-Stamped "last success recorded in logs\$(Split-Path -Leaf $successFile)"
-if ($status.check -eq 'flagged' -or $status.auto -eq 'needs_person') { Complete-Run 3 }
+if ($status.check -eq 'flagged' -or $status.auto -eq 'needs_owner') { Complete-Run 3 }
 Complete-Run 0

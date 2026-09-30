@@ -144,18 +144,29 @@ def claim(**kw) -> dict:
     return base
 
 
-def reviewed(c: dict, when: str = "2026-09-28", outcome: str = "supported", by: str = "tester") -> dict:
-    """Give a claim evidence that supports an availability assertion, and a valid review of it."""
+def reviewed(c: dict, when: str = "2026-09-28", outcome: str = "supported", by: str = "tester",
+             date_evidence: bool = True) -> dict:
+    """Give a claim evidence that supports an availability assertion, and a valid review of it. Evidence
+    without a fetch date is dated on the review day, as `drift snapshot` would have (date_evidence=False
+    leaves it undated, to probe the fetch-window rule)."""
     from drift import registry
     from drift.snapshot import sha256
 
     if not c.get("snapshot"):
         c["snapshot"] = f"pypi {c['tool']} 1.0.0"
         c["snapshot_hash"] = sha256(c["snapshot"])
+    if date_evidence:
+        for r in [c] + list(c.get("sources") or []):
+            if (r.get("snapshot") or r.get("snapshot_hash")) and not r.get("fetched_at"):
+                r["fetched_at"] = when
     c.setdefault("assertions", ["availability"])
     if not c.get("supports"):
         c["supports"] = list(c["assertions"])
     c.update(reviewed_at=when, reviewed_by=by, review_outcome=outcome)
     c["review_hash"] = registry.review_hash(c)
     c["review_claim_hash"] = registry.claim_hash(c)
+    c["review_fetched_at"] = registry.fetch_dates(c)
+    for k in registry.APPROVAL_KEYS:
+        c.pop(k, None)
+    c["review_event_hash"] = registry.review_event_hash(c)
     return c

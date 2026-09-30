@@ -17,7 +17,7 @@ def mini_claims(reviewed_on="2026-09-27"):
     for layer, n in enumerate(R.LAYER_COUNTS, start=1):
         for k in range(n):
             c = claim(id=f"L{layer:02d}-t{k}", layer=layer, layer_name=f"Layer {layer}", tool=f"Tool {layer}.{k}",
-                      last_version="1.0", fetched_at="2026-09-27")
+                      last_version="1.0", fetched_at=reviewed_on or "2026-09-27")  # evidence fetched on review day
             out.append(reviewed(c, when=reviewed_on) if reviewed_on else c)
     return out
 
@@ -139,6 +139,7 @@ def test_build_refuses_claims_last_seen_in_2020_without_review(tmp_path, capsys)
 
 def test_old_review_expires_the_map_even_with_a_fresh_version(tmp_path):
     claims = mini_claims(reviewed_on="2026-09-27")
+    claims[5]["fetched_at"] = "2026-09-01"
     reviewed(claims[5], when="2026-09-01")  # one old review drags expiry forward
     m = M.build_map(claims, CTL, "v2026.09.28")
     assert m["expires"] == "2026-10-01" and m["oldest_review"] == "2026-09-01"
@@ -264,12 +265,14 @@ def test_committed_newest_map_verifies_against_the_registry():
     assert ok, msgs
 
 
-def test_legacy_schema_map_is_reported_as_skipped(tmp_path):
+def test_unpinned_legacy_schema_map_fails_verification(tmp_path):
+    """A02: a schema-1 map.json under a historical version id is not a pass just because it says 'legacy'."""
     legacy = tmp_path / "v2026.09.27.1"
     legacy.mkdir()
     (legacy / "map.json").write_text(json.dumps({"schema_version": 1, "version": "v2026.09.27.1"}), encoding="utf-8")
     ok, msgs = M.verify(tmp_path)
-    assert ok and "legacy" in msgs[0]
+    assert not ok and "schema" in msgs[0]
+    assert M.verify_publication(tmp_path)[0] == "failed"
 
 
 # ---- PR #5 review: R3 (verify enforces reviews), R7 (no already-expired build), R8 (counts) ----
@@ -385,3 +388,171 @@ def test_verify_fails_when_the_rendered_png_or_its_sidecar_is_missing(tmp_path, 
     map_md.write_text(M.render_map_markdown(m), encoding="utf-8")
     ok, msgs = M.verify(maps, reg, readme, map_md, render=True)
     assert not ok and any(missing in s and "missing" in s for s in msgs), msgs
+
+
+# ---- A02 (2026-09-29 audit): the current publication must be the current schema ----
+
+def _rewrite(path, m, readme, md):
+    path.write_text(M.map_json_text(m), encoding="utf-8")
+    if m.get("layers") is not None and m.get("version"):
+        readme.write_text("x\n" + M.render_readme_block(m) + "\ny\n", encoding="utf-8")
+        md.write_text(M.render_map_markdown(m), encoding="utf-8")
+
+
+def _cli(maps, reg, readme, md, *cmd):
+    return M.main([*cmd, "--maps-dir", str(maps)] + (["--registry", str(reg), "--readme", str(readme),
+                                                     "--map-md", str(md), "--no-render"] if cmd[0] == "verify" else
+                                                    ["--today", "2026-09-28"]))
+
+
+@pytest.mark.parametrize("probe", ["downgrade", "missing", "unknown", "string", "empty_layers"])
+def test_schema_probes_fail_map_check_and_map_verify(tmp_path, monkeypatch, probe):
+    reg, maps, readme, md = _published(tmp_path, monkeypatch, mini_claims(reviewed_on="2026-09-28"))
+    assert _cli(maps, reg, readme, md, "check") == 0 and _cli(maps, reg, readme, md, "verify") == 0
+    path = M.latest_map(maps)
+    m = json.loads(path.read_text(encoding="utf-8"))
+    if probe == "downgrade":
+        m["schema_version"] = 1
+    elif probe == "missing":
+        del m["schema_version"]
+    elif probe == "unknown":
+        m["schema_version"] = 99
+    elif probe == "string":
+        m["schema_version"] = str(M.SCHEMA_VERSION)
+    else:
+        m["layers"] = []
+    _rewrite(path, m, readme, md)
+    assert _cli(maps, reg, readme, md, "check") == 1
+    assert _cli(maps, reg, readme, md, "verify") == 1
+    assert not M.check_expiry(path, dt.date(2026, 9, 28))[0]
+    assert M.verify_publication(maps, reg, readme, md, render=False)[0] == "failed"
+
+
+def _copy_version(src_version, dest, name=None):
+    import shutil
+    target = dest / (name or src_version)
+    shutil.copytree(M.MAPS_DIR / src_version, target)
+    return target / "map.json"
+
+
+@pytest.mark.parametrize("version", sorted(M.LEGACY_MAPS))
+def test_pinned_legacy_map_as_newest_is_a_distinct_non_success(tmp_path, version):
+    maps = tmp_path / "maps"
+    _copy_version(version, maps)
+    state, msgs = M.verify_publication(maps, render=False)
+    assert state == "skipped" and "legacy" in msgs[0]
+    assert M.main(["verify", "--maps-dir", str(maps), "--no-render"]) == M.EXIT_LEGACY
+    assert M.main(["check", "--maps-dir", str(maps), "--today", "2026-09-29"]) == M.EXIT_LEGACY
+    assert M.EXIT_LEGACY not in (0, 1)
+
+
+def test_legacy_pin_is_exact_version_and_digest(tmp_path):
+    maps = tmp_path / "a"
+    p = _copy_version("v2026.09.28", maps)
+    p.write_bytes(p.read_bytes().replace(b"LiteLLM", b"LiteLLM2"))  # one edited byte range: not the pinned file
+    assert M.verify_publication(maps, render=False)[0] == "failed"
+    assert M.main(["check", "--maps-dir", str(maps), "--today", "2026-09-29"]) == 1
+    maps = tmp_path / "b"
+    _copy_version("v2026.09.28", maps, name="v2026.09.30")  # pinned bytes under another version id
+    assert M.verify_publication(maps, render=False)[0] == "failed"
+
+
+@pytest.mark.parametrize("eol", [b"\n", b"\r\n"], ids=["lf", "crlf"])
+def test_pinned_digest_matches_either_line_ending_of_the_same_content(tmp_path, eol):
+    """The pin is over the canonical LF bytes; a checkout with either line ending must match it. Build
+    each variant from the canonical form: the copied file is already CRLF on a Windows checkout with
+    core.autocrlf, and converting it again would produce different content (\\r\\r\\n)."""
+    maps = tmp_path / "maps"
+    p = _copy_version("v2026.09.28", maps)
+    canonical = p.read_bytes().replace(b"\r\n", b"\n")
+    p.write_bytes(canonical.replace(b"\n", eol))
+    assert M.publication_state(p)[0] == "legacy"
+
+
+@pytest.mark.parametrize("damage", [b"\r\r\n", b"\r"], ids=["double-cr", "bare-cr"])
+def test_pinned_digest_is_not_blind_to_other_carriage_returns(tmp_path, damage):
+    """Only CRLF is normalised. Any other change to the bytes, stray CRs included, breaks the pin."""
+    maps = tmp_path / "maps"
+    p = _copy_version("v2026.09.28", maps)
+    canonical = p.read_bytes().replace(b"\r\n", b"\n")
+    p.write_bytes(canonical.replace(b"\n", damage))
+    assert M.publication_state(p)[0] == "invalid"
+
+
+def test_pins_are_the_digest_of_the_committed_blobs():
+    """Each pin equals map_file_sha256 of the file as git stores it (LF), not only of this checkout."""
+    import hashlib
+    import subprocess
+    for version, pin in M.LEGACY_MAPS.items():
+        blob = subprocess.run(["git", "-C", str(R.ROOT), "show", f"HEAD:maps/{version}/map.json"],
+                              capture_output=True, check=True).stdout
+        assert b"\r\n" not in blob, version
+        assert pin == "sha256:" + hashlib.sha256(blob).hexdigest(), version
+
+
+def test_archived_legacy_versions_stay_readable():
+    for version, digest in M.LEGACY_MAPS.items():
+        p = M.MAPS_DIR / version / "map.json"
+        assert M.map_file_sha256(p) == digest, version
+        state, m, _ = M.publication_state(p)
+        assert state == "legacy" and m["version"] == version
+        assert m["layers"] and M.render_map_markdown(m)
+        if m["schema_version"] >= 2:
+            M.validate_publication_dates(m)
+
+
+def test_committed_newest_map_is_the_current_schema():
+    state, m, msg = M.publication_state(M.latest_map())
+    assert state == "current" and m["schema_version"] == M.SCHEMA_VERSION, msg
+
+
+# ---- A07/A10 (minimal): the Monday CI run detects a stalled weekly job and governance coming due ----
+
+def _watch_world(tmp_path, monkeypatch, reviewed_on="2026-09-28", version="v2026.09.28", due="2026-12-31"):
+    import yaml
+    reg, maps, readme, md = _published(tmp_path, monkeypatch, mini_claims(reviewed_on=reviewed_on), version)
+    gov = tmp_path / "gov.yaml"
+    gov.write_text(yaml.safe_dump({"governance": [{"name": "A", "source_url": "https://a.invalid/",
+                                                    "reviewed_at": "2026-09-27", "review_due": due}]}), encoding="utf-8")
+    return ["watch", "--maps-dir", str(maps), "--governance", str(gov)]
+
+
+def test_watch_threshold_is_derived_from_the_weekly_publish_threshold():
+    from drift import auto as A
+    assert A.RENEW_DAYS == M.RENEW_DAYS
+    # Monday 2026-10-19: the last Saturday run was 2026-10-17 (2 days ago). A healthy run publishes when
+    # <= RENEW_DAYS days are left, so on Monday a healthy map has at least RENEW_DAYS + 1 - 2 days left.
+    assert M.stalled_publication_margin(dt.date(2026, 10, 19)) == M.RENEW_DAYS - 1
+
+
+@pytest.mark.parametrize("today,margin", [("2026-10-18", 7), ("2026-10-19", 6), ("2026-10-20", 5),
+                                          ("2026-10-23", 2), ("2026-10-24", 1)])
+def test_stalled_margin_counts_days_since_the_last_saturday_run(today, margin):
+    """RENEW_DAYS + 1 - days since the last Saturday run (Sunday 1 ... Saturday 7: that day's own run may
+    not have happened yet, so it counts from the previous Saturday)."""
+    assert M.RENEW_DAYS == 7
+    assert M.stalled_publication_margin(dt.date.fromisoformat(today)) == margin
+
+
+@pytest.mark.parametrize("today,ok", [("2026-10-19", True), ("2026-10-26", False)])
+def test_watch_on_mondays(tmp_path, monkeypatch, capsys, today, ok):
+    """Expires 2026-10-28. Monday 19th: 9 days left, healthy. Monday 26th: 2 days left, so the Saturday
+    run (5 days left, within RENEW_DAYS) should have published and did not: fail loudly."""
+    argv = _watch_world(tmp_path, monkeypatch)
+    assert M.main(argv + ["--today", today]) == (0 if ok else 1)
+    out = capsys.readouterr().out
+    if not ok:
+        assert "weekly job" in out and "should already have published" in out
+
+
+@pytest.mark.parametrize("due,ok", [("2026-10-27", True), ("2026-10-26", False), ("2026-10-01", False)])
+def test_watch_fails_when_a_governance_review_is_due_within_7_days_or_overdue(tmp_path, monkeypatch, capsys, due, ok):
+    argv = _watch_world(tmp_path, monkeypatch, due=due)
+    assert M.main(argv + ["--today", "2026-10-19"]) == (0 if ok else 1)
+    if not ok:
+        assert "governance A" in capsys.readouterr().out
+
+
+def test_watch_fails_on_an_invalid_or_expired_map(tmp_path, monkeypatch):
+    argv = _watch_world(tmp_path, monkeypatch)
+    assert M.main(argv + ["--today", "2026-11-02"]) == 1

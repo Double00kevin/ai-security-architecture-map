@@ -1,0 +1,135 @@
+The AI Architecture Map — 
+Build it. Secure it.
+12 capability areas an AI build can draw on, example tools for each, and one security control to start with.
+LAYER
+TOOLS
+SECURITY CONTROL
+01
+Models & Hosting
+Claude · GPT · Gemini · Llama · Mistral · Qwen · DeepSeek · Bedrock · vLLM · Ollama
+Claude
+GPT
+Gemini
+Llama
+Mistral
+Qwen
+DeepSeek
+Bedrock
+vLLM
+Ollama
+Zero-retention terms, pinned versions with a named owner, no public inference ports
+02
+AI Gateway
+LiteLLM · Prisma AIRS (Portkey) · OpenRouter · Cloudflare AI Gateway · Kong
+LiteLLM
+Prisma AIRS (Portkey)
+OpenRouter
+Cloudflare AI Gateway
+Kong
+Central auth, rate limits, spend caps, PII redaction
+03
+Orchestration & Agents
+LangGraph · Claude Agent SDK · OpenAI Agents SDK · Google ADK · CrewAI · Microsoft Agent Framework
+LangGraph
+Claude Agent SDK
+OpenAI Agents SDK
+Google ADK
+CrewAI
+Microsoft Agent Framework
+Step/budget limits, human approval for irreversible actions
+04
+Tools & MCP
+MCP · Agent Skills · FastMCP · Composio · Arcade
+MCP
+Agent Skills
+FastMCP
+Composio
+Arcade
+Least-privilege scopes, allowlists, vetted servers + skills
+05
+Ingestion
+Unstructured · Docling · LlamaParse · Firecrawl · Airbyte
+Unstructured
+Docling
+LlamaParse
+Firecrawl
+Airbyte
+Sanitize inputs, tag source + trust level on every chunk
+06
+Embeddings & Vector DB
+Voyage · Cohere · BGE · pgvector · Pinecone · Qdrant · Weaviate
+Voyage
+Cohere
+BGE
+pgvector
+Pinecone
+Qdrant
+Weaviate
+Classify vectors like source data, ACL filters at query time
+07
+Retrieval (RAG)
+LlamaIndex · LangChain · Haystack · GraphRAG · Cohere Rerank
+LlamaIndex
+LangChain
+Haystack
+GraphRAG
+Cohere Rerank
+Retrieved text = untrusted input, never instructions
+08
+Memory
+Mem0 · Zep · Redis · Neo4j · Weaviate Engram
+Mem0
+Zep
+Redis
+Neo4j
+Weaviate Engram
+Validate writes, TTLs, user-visible + deletable memory
+09
+Guardrails
+NeMo Guardrails · Llama Guard · LlamaFirewall · Presidio · Check Point AI Guardrails
+NeMo Guardrails
+Llama Guard
+LlamaFirewall
+Presidio
+Check Point AI Guardrails
+Defense in depth. Assume filters get bypassed
+10
+Evals & Red Team
+promptfoo · DeepEval · Braintrust · Inspect · garak · PyRIT
+promptfoo
+DeepEval
+Braintrust
+Inspect
+garak
+PyRIT
+Adversarial evals gate every deploy
+11
+Observability
+Langfuse · LangSmith · Arize Phoenix · MLflow · OpenTelemetry
+Langfuse
+LangSmith
+Arize Phoenix
+MLflow
+OpenTelemetry
+Audit every tool call; redact + restrict the logs
+12
+Automation
+n8n · Temporal · Airflow · Prefect · Make
+n8n
+Temporal
+Airflow
+Prefect
+Make
+Vaulted secrets, signed webhooks, named owners
+GOVERN IT ALL
+OWASP LLM Top 10 (2026) · OWASP Agentic Top 10 · NIST AI RMF · ISO/IEC 42001 · MITRE ATLAS
+OWASP LLM Top 10 (2026)
+OWASP Agentic Top 10
+NIST AI RMF
+ISO/IEC 42001
+MITRE ATLAS
+Illustrative. Not an endorsement or a complete security baseline. A starting point, not a finish line.
+Save this for your next build. 
+Security is a layer-by-layer job.
+@00Kevin
+map v2026.09.29.1 · checked 2026-09-28 · re-check due 2026-10-28 · github.com/Double00kevin/ai-security-architecture-map

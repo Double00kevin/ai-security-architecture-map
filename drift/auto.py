@@ -1,17 +1,18 @@
 """`drift auto`: the weekly job's publishing step. Renews routine claims, and publishes a new map
-version when one is needed, with no person in the loop for routine weeks.
+version when one is needed, with no one in the loop for routine weeks (a deterministic rule, no AI).
 
     python -m drift auto --report reports/2026-10-03T130000Z.json   # the check report this run wrote
     python -m drift auto --report ... --dry-run                     # decide and print; write nothing
 
 For every claim, using the fresh evidence already in the check report (nothing is fetched again):
 
-- RENEWED automatically when a person's `supported` review stands behind it (the claim is unchanged
+- RENEWED automatically when a `supported` review (an AI-assessed review event) stands behind it (the claim is unchanged
   since that review and the review is at most 180 days old), every receipt was fetched, and each
   receipt is either unchanged or changed only in version numbers and dates on a package/release
   source (PyPI, npm, GitHub releases/tags). The new excerpts are written to the registry and an
   automated re-check record is added (auto_checked_at / auto_check_basis / auto_check_hash).
-- LEFT FOR A PERSON otherwise: a changed page section, a lifecycle signal, a source that could not be
+- LEFT FOR THE OWNER'S DECISION otherwise: a changed page section, a lifecycle signal, a broken freshness rule
+  (a time-based claim whose observed timestamp is now too old), a source that could not be
   fetched, an unresolved or missing review, evidence that does not match its digest, a claim edited
   since its review, or a review older than 180 days. Nothing about such a claim is changed; its last
   check keeps counting down, and the map stays live until the oldest check is 30 days old.
@@ -19,10 +20,10 @@ For every claim, using the fresh evidence already in the check report (nothing i
 A new map version is built (map.json, MAP.md, README block, map.png; videos are rendered on demand
 for posts) when what a reader would see differs from the published map, or when the published map is
 within RENEW_DAYS of its re-check deadline. A version never changes tools or labels on its own:
-content changes only come from registry edits a person reviewed.
+content changes only come from reviewed registry edits the owner merged.
 
-Writes reports/<run_id>-auto.json and .md. Exit codes: 0 nothing needs a person; 3 something needs
-a person (the run itself succeeded); 1 error; 2 the report does not match the registry.
+Writes reports/<run_id>-auto.json and .md. Exit codes: 0 nothing waits for the owner; 3 something waits
+for the owner's decision (the run itself succeeded); 1 error; 2 the report does not match the registry.
 """
 
 from __future__ import annotations
@@ -40,10 +41,10 @@ from pathlib import Path
 
 from . import mapgen, registry, report
 
-EXIT_OK, EXIT_ERROR, EXIT_SETUP, EXIT_NEEDS_PERSON = 0, 1, 2, 3
+EXIT_OK, EXIT_ERROR, EXIT_SETUP, EXIT_NEEDS_OWNER = 0, 1, 2, 3
 ROUTINE_SOURCES = frozenset({"pypi", "npm", "github_release", "github_tag"})
 ROUTINE_REASONS = frozenset({"version_bump", "section_changed", "stale"})
-RENEW_DAYS = 7  # publish a fresh version when the published one is this close to its re-check deadline
+RENEW_DAYS = mapgen.RENEW_DAYS  # publish a fresh version when the published one is this close to its re-check deadline
 
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?")
 _VERSION = re.compile(r"(?<![\w.])v?\d+(?:\.\d+)+(?:[-+.]?(?:a|b|rc|dev|post|alpha|beta)\.?\d*)*(?![\w.])")
@@ -82,21 +83,27 @@ def decide(c: dict, findings: list[dict], today: dt.date) -> tuple[bool, str]:
     if len(findings) != len(receipts) or set(by_receipt) != set(range(len(receipts))):
         return False, "not every receipt was checked in this run"
     if c.get("review_outcome") != "supported" or not c.get("reviewed_at"):
-        return False, f"no supported review by a person (outcome {c.get('review_outcome')!r})"
+        return False, f"no supported review (outcome {c.get('review_outcome')!r})"
     if c.get("review_claim_hash") != registry.claim_hash(c):
-        return False, "claim, owner, status or sources changed since the last human review"
+        return False, "claim, owner, status or sources changed since the last review"
     age = (today - registry._date(c["reviewed_at"])).days
-    if age > registry.HUMAN_REVIEW_MAX_DAYS:
-        return False, f"human review is {age} days old (limit {registry.HUMAN_REVIEW_MAX_DAYS}): periodic review due"
+    if age > registry.REVIEW_MAX_DAYS:
+        return False, f"review is {age} days old (limit {registry.REVIEW_MAX_DAYS}): periodic review due"
     if registry.integrity_problems(c):
         return False, "stored evidence does not match its digest"
+    stale = registry.review_fetch_problems(c)
+    if stale:
+        return False, "the review rests on stale evidence: " + "; ".join(stale)
     if registry.review_state(c) != "valid" and registry.auto_state(c) != "valid":
-        return False, "stored evidence has no valid review chain; a person must review it"
+        return False, "stored evidence has no valid review chain; it needs a new review"
     if age < 0:
-        return False, "human review is in the future"
+        return False, "review is in the future"
     routine = []
     for i, r in enumerate(receipts):
         f = by_receipt[i]
+        fresh = registry.freshness_problem(r, f.get("new_excerpt"), today)
+        if fresh:
+            return False, f"receipt {i}: {fresh}"
         other = set(f.get("reasons") or []) - ROUTINE_REASONS
         if other:
             return False, f"receipt {i}: {', '.join(sorted(other))}"
@@ -108,7 +115,7 @@ def decide(c: dict, findings: list[dict], today: dt.date) -> tuple[bool, str]:
         if f["new_hash"] == r.get("snapshot_hash"):
             continue
         if r["source_type"] not in ROUTINE_SOURCES:
-            return False, f"receipt {i}: {r['source_type']} excerpt changed (pages are read by a person)"
+            return False, f"receipt {i}: {r['source_type']} excerpt changed (a changed page needs a new review)"
         if mask(new) != mask(r.get("snapshot") or ""):
             return False, f"receipt {i}: excerpt changed beyond version numbers and dates"
         routine.append(f"receipt {i} {r.get('last_version') or '?'} -> {f.get('new_version') or '?'}")
@@ -129,7 +136,7 @@ def apply(c: dict, findings: list[dict], basis: str, when: dt.date) -> None:
         registry.set_receipt(c, i, upd)
     c["auto_checked_at"] = when.isoformat()
     c["auto_check_basis"] = basis
-    c["auto_check_hash"] = registry.review_hash(c)
+    c["auto_check_hash"] = registry.auto_check_hash(c)
     if registry.auto_state(c) != "valid":  # belt and braces: never write a re-check that would not hold
         raise registry.RegistryError(f"{c['id']}: automated re-check would not be valid; refusing to write it")
 
@@ -147,13 +154,17 @@ def needs_version(claims: list[dict], today: dt.date, maps_dir: Path) -> tuple[b
     p = mapgen.latest_map(maps_dir)
     if p is None:
         return True, "no published map"
-    pub = json.loads(p.read_text(encoding="utf-8"))
+    state, pub, why = mapgen.publication_state(p)
+    if state != "current":
+        return True, f"published map is not a current-schema publication ({why})"
     try:
         cand = mapgen.build_map(claims, mapgen.load_controls(), pub["version"], mapgen.load_governance(), mapgen.load_copy())
     except mapgen.MapError as e:
         return True, f"registry no longer builds the published layout ({e})"
     if mapgen.content(cand) != mapgen.content(pub):
         return True, f"content differs from {pub['version']} (reviewed registry changes)"
+    if mapgen.approvals(cand) != mapgen.approvals(pub):
+        return True, f"owner approvals differ from {pub['version']} (recorded by `drift approve`)"
     left = (dt.date.fromisoformat(pub["expires"]) - today).days
     if left <= RENEW_DAYS:
         return True, f"{pub['version']} re-check due in {left} day(s)"
@@ -208,7 +219,7 @@ def build_version(claims: list[dict], version: str, today: dt.date, why: str, su
                 f"Published by the weekly job: {why}.",
                 f"- Tools and labels: {'changed (reviewed registry edits)' if 'content differs' in why else 'unchanged'}. "
                 f"{m['counts']['tools']} tools; oldest check {m['oldest_check']}; re-check due {m['expires']}.",
-                f"- This run: {summary['renewed']} claim(s) re-checked automatically, {summary['needs_person']} waiting for a person.",
+                f"- This run: {summary['renewed']} claim(s) re-checked automatically, {summary['needs_owner']} waiting for the owner's decision.",
                 "- Media: map.png. Videos are rendered on demand for posts.", ""]))
             replacements.update({mapgen.MAP_MD: staged_md, mapgen.README: staged_readme, changelog: staged_log})
         before = {p: p.read_bytes() if p.exists() else None for p in replacements}
@@ -238,14 +249,14 @@ def render_md(doc: dict) -> str:
     md = report.md_escape
     L = [f"# Automated publishing {doc['run_id']}", "",
          f"Check report `{doc['report_run_id']}` ({doc['checked_on']}). {doc['summary']['renewed']} claim(s) re-checked "
-         f"automatically, {doc['summary']['needs_person']} waiting for a person.", "",
+         f"automatically, {doc['summary']['needs_owner']} waiting for the owner's decision.", "",
          f"Map: {doc['version']['action']} ({md(doc['version']['why'])}).", ""]
-    if doc["needs_person"]:
-        L += ["## Needs a person", "", "| id | tool | on map | why |", "|---|---|---|---|"]
+    if doc["needs_owner"]:
+        L += ["## Waits for the owner's decision", "", "| id | tool | on map | why |", "|---|---|---|---|"]
         L += [f"| {md(x['id'])} | {md(x['tool'])} | {'yes' if x['on_map'] else 'candidate'} | {md(x['why'])} |"
-              for x in doc["needs_person"]] + [""]
+              for x in doc["needs_owner"]] + [""]
     else:
-        L += ["## Needs a person", "", "Nothing.", ""]
+        L += ["## Waits for the owner's decision", "", "Nothing.", ""]
     L += ["## Re-checked automatically", "", "| id | basis |", "|---|---|"]
     L += [f"| {md(x['id'])} | {md(x['basis'])} |" for x in doc["renewed"]] + [""]
     return "\n".join(L)
@@ -283,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
             renewed.append({"id": c["id"], "basis": why})
         else:
             needs.append({"id": c["id"], "tool": c["tool"], "on_map": c.get("on_map", True), "why": why})
-    summary = {"renewed": len(renewed), "needs_person": len(needs)}
+    summary = {"renewed": len(renewed), "needs_owner": len(needs)}
     version = {"action": "none", "why": ""}
     try:
         need, why = needs_version(claims, today, args.maps_dir)
@@ -299,7 +310,7 @@ def main(argv: list[str] | None = None) -> int:
                 except mapgen.MapError as e:
                     version.update(action="blocked", why=f"{why}; build refused: {e}")
                     needs.append({"id": "(map)", "tool": "new version", "on_map": True, "why": version["why"]})
-                    summary["needs_person"] = len(needs)
+                    summary["needs_owner"] = len(needs)
         if not args.dry_run and not version["action"].startswith("built "):
             registry.save(claims, args.registry)
     except (registry.RegistryError, mapgen.MapError, PublicationError, OSError) as e:
@@ -307,18 +318,18 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_ERROR
 
     doc = {"run_id": f"{rep['run_id']}-auto", "report_run_id": rep["run_id"], "checked_on": today.isoformat(),
-           "summary": summary, "version": version, "needs_person": needs, "renewed": renewed}
-    print(f"drift auto: {summary['renewed']} re-checked automatically, {summary['needs_person']} need a person; "
+           "summary": summary, "version": version, "needs_owner": needs, "renewed": renewed}
+    print(f"drift auto: {summary['renewed']} re-checked automatically, {summary['needs_owner']} wait for the owner; "
           f"map: {version['action']} ({version['why']})")
     for x in needs:
-        print(f"  needs a person: {x['id']} ({x['tool']}): {x['why']}")
+        print(f"  waits for the owner: {x['id']} ({x['tool']}): {x['why']}")
     if not args.dry_run:
         out = Path(args.reports_dir)
         out.mkdir(parents=True, exist_ok=True)
         (out / f"{doc['run_id']}.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n",
                                                    encoding="utf-8", newline="\n")
         (out / f"{doc['run_id']}.md").write_text(render_md(doc), encoding="utf-8", newline="\n")
-    return EXIT_NEEDS_PERSON if needs else EXIT_OK
+    return EXIT_NEEDS_OWNER if needs else EXIT_OK
 
 
 if __name__ == "__main__":

@@ -6,23 +6,31 @@ receipt says which assertions it evidences (`supports:`), and the claim lists th
 text makes (`assertions:`). A claim is publishable only when every assertion has a receipt with a
 snapshot that supports it.
 
-Two kinds of dates, never mixed:
+Kinds of record, never mixed:
 - `fetched_at` (per receipt) is written by `drift snapshot`. It says when evidence was fetched,
-  nothing about whether anyone read it.
-- the review record (`reviewed_at`, `reviewed_by`, `review_outcome`, `review_hash`,
-  `review_claim_hash`) is written only by a person running `drift review`. `review_hash` binds the
-  review to exactly what was reviewed; when the claim, its status, owner, ownership event, sources or
-  evidence change, the hash no longer matches and the review is void. `review_claim_hash` binds it to
-  the claim alone (everything except the excerpts' digests).
+  nothing about whether anyone assessed it.
+- the review event (`reviewed_at`, `reviewed_by`, `review_outcome`, `review_hash`,
+  `review_claim_hash`, `review_fetched_at`, `review_event_hash`) is written only by `drift review`.
+  It records an AI-assessed review: `reviewed_by` names the assessor (every record so far is
+  `claude` or `claude-code`), which read the receipts' excerpts and judged whether they support the
+  claim. `review_hash` binds the review to exactly what was assessed; when the claim, its status,
+  owner, ownership event, sources or evidence change, the hash no longer matches and the review is
+  void. `review_claim_hash` binds it to the claim alone (everything except the excerpts' digests).
+  `review_event_hash` binds outcome, assessor, date, fetch dates and any approval to both.
+- the owner's approval (`approved_by`, `approved_at`, `approval_ref`) is optional, part of the review
+  event, and written only by `drift approve` from a pull request the owner merged. Only a claim with
+  a valid approval may be called owner-approved.
 - the automated re-check (`auto_checked_at`, `auto_check_basis`, `auto_check_hash`) is written only
-  by `drift auto` in the weekly job. It carries a person's `supported` review forward across routine
-  evidence changes: the claim itself must be unchanged since that review (`review_claim_hash`), the
-  review must be at most HUMAN_REVIEW_MAX_DAYS old when the re-check is made, and every changed
-  receipt must differ only in version numbers and dates. Anything else waits for a person.
+  by `drift auto` in the weekly job, by a deterministic rule (no AI). It carries a `supported` review
+  forward across routine evidence changes: the claim itself must be unchanged since that review
+  (`review_claim_hash`), the review must be at most REVIEW_MAX_DAYS old when the re-check is made,
+  and every changed receipt must differ only in version numbers and dates. Anything else waits for
+  the owner's decision.
 
 Every stored `snapshot_hash` is recomputed from its `snapshot` whenever the registry is read. A
 malformed digest is a registry error; a digest that does not match its excerpt voids the claim's
-review and blocks publication until `drift snapshot` re-takes the evidence and a person reviews it.
+review and blocks publication until `drift snapshot` re-takes the evidence and a new review is
+recorded.
 This catches accidental or partial edits. It is not a signature: someone who rewrites an excerpt and
 its digest and the review hash together is not detected here (git history and review are the control).
 """
@@ -49,23 +57,32 @@ OWNERSHIP_KINDS = frozenset({"acquisition_completed", "acquisition_agreed", "mer
 LAYERS = range(1, 13)
 LAYER_COUNTS = [10, 5, 6, 5, 5, 7, 5, 5, 5, 6, 5, 5]  # map v2 (v2026.09.27.1); v2026.09.26 was 7,4,5,5,4,6,5,5,5,6,5,5
 STALE_DAYS = 30  # house rule: no review or version is trusted past 30 days
+REVIEW_FETCH_MAX_DAYS = 7  # a review assesses evidence fetched on or at most this many days before it
 
 HEADER = (
     "# Claim registry for the 12-layer AI architecture map.\n"
     "# One record per tool per layer. claim/status/owner/assertions/supports are edited by hand after\n"
     "# reading the source; snapshot fields and fetched_at are written by `python -m drift snapshot`;\n"
-    "# the review record (reviewed_*, review_*) is written only by a person via `python -m drift review`.\n"
+    "# the review event (reviewed_*, review_*) only by `python -m drift review` (an AI-assessed review;\n"
+    "# reviewed_by names the assessor); approved_* only by `python -m drift approve`.\n"
 )
 
 REQUIRED = ("id", "layer", "layer_name", "tool", "claim", "status", "source_type", "source_url")
 RECEIPT_KEYS = ("source_type", "source_url", "locator", "excerpt_chars", "redirect_to",
-                "snapshot", "snapshot_hash", "last_version", "fetched_at", "supports")
-REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash")
+                "snapshot", "snapshot_hash", "last_version", "fetched_at", "supports", "freshness")
+REVIEW_KEYS = ("reviewed_at", "reviewed_by", "review_outcome", "review_hash", "review_claim_hash",
+               "review_fetched_at", "review_event_hash")
+APPROVAL_KEYS = ("approved_by", "approved_at", "approval_ref")  # optional; written only by `drift approve`
+AI_ASSESSORS = frozenset({"claude", "claude-code"})  # `reviewed_by` values that name an AI assessor
+OWNER_LOGIN = "Double00kevin"  # the one GitHub account whose merge of a review PR counts as owner approval
+REPOSITORY = "Double00kevin/ai-security-architecture-map"
+APPROVAL_REF_RE = re.compile(r"https://github\.com/" + re.escape(REPOSITORY) + r"/pull/[1-9][0-9]*")
 AUTO_KEYS = ("auto_checked_at", "auto_check_basis", "auto_check_hash")
-HUMAN_REVIEW_MAX_DAYS = 180  # an automated re-check never carries a person's review further than this
+REVIEW_MAX_DAYS = 180  # an automated re-check never carries a review further than this
 LEGACY_KEYS = ("last_checked", "checked_by")  # replaced by fetched_at; never a review
 ID_RE = re.compile(r"L(\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*")
 HASH_RE = re.compile(r"sha256:[0-9a-f]{64}")
+FIELD_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 class RegistryError(ValueError):
@@ -150,23 +167,92 @@ def claim_hash(c: dict) -> str:
     return _hash(p)
 
 
+def _iso(v) -> str | None:
+    d = _date(v)
+    return None if d is None else d.isoformat()
+
+
+def fetch_dates(c: dict) -> list[str | None]:
+    """Each receipt's fetched_at, primary first, as YYYY-MM-DD."""
+    return [_iso(r.get("fetched_at")) for r in receipts(c)]
+
+
+def review_event_payload(c: dict) -> dict:
+    """The review event: the claim/evidence digest it assessed plus who assessed it, when, with what
+    outcome, the fetch date of every receipt it read, and the owner's approval if one was recorded.
+    Change any of it and the event, and every check that rests on it, is void."""
+    return {
+        "review_hash": c.get("review_hash"),
+        "review_claim_hash": c.get("review_claim_hash"),
+        "outcome": c.get("review_outcome"),
+        "assessor": c.get("reviewed_by"),
+        "reviewed_at": _iso(c.get("reviewed_at")),
+        "fetched_at": [_iso(d) for d in (c.get("review_fetched_at") or [])],
+        "approval": {k: (None if c.get(k) in (None, "") else str(c[k])) for k in APPROVAL_KEYS},
+    }
+
+
+def review_event_hash(c: dict) -> str:
+    return _hash(review_event_payload(c))
+
+
+def review_event_intact(c: dict) -> bool:
+    """The stored event digest matches the stored review record (it says nothing about current evidence)."""
+    try:
+        return bool(c.get("review_event_hash")) and c["review_event_hash"] == review_event_hash(c)
+    except ValueError:  # an unparseable date
+        return False
+
+
+def review_assessment_hash(c: dict) -> str:
+    """The review event without the owner's approval: what an automated re-check carries forward, so a
+    later approval of the same event does not void a re-check made in between."""
+    return _hash({**review_event_payload(c), "approval": None})
+
+
+def auto_check_hash(c: dict) -> str:
+    """The automated re-check: the current evidence digest, its date and basis, every receipt's fetch
+    date, and the review assessment it carries forward."""
+    return _hash({"review_hash": review_hash(c), "auto_checked_at": _iso(c.get("auto_checked_at")),
+                  "basis": c.get("auto_check_basis"), "fetched_at": fetch_dates(c),
+                  "review_assessment": review_assessment_hash(c)})
+
+
+def owner_approved(c: dict) -> bool:
+    """True only when all three approval fields are present, name the owner and a pull request of this
+    repository, and the review event digest (which covers them) is intact."""
+    if any(c.get(k) in (None, "") for k in APPROVAL_KEYS) or not review_event_intact(c):
+        return False
+    return c["approved_by"] == OWNER_LOGIN and bool(APPROVAL_REF_RE.fullmatch(str(c["approval_ref"])))
+
+
 def review_state(c: dict) -> str:
-    """'missing' (no review), 'void' (the reviewed evidence or claim changed, or an excerpt no longer
-    matches its stored digest), or 'valid'."""
+    """'missing' (no review), 'void' (the reviewed evidence, claim or review event changed, a receipt's
+    fetch date differs from the one assessed, or an excerpt no longer matches its stored digest), or
+    'valid'."""
     if not c.get("review_hash"):
         return "missing"
-    if integrity_problems(c):
+    if integrity_problems(c) or not review_event_intact(c):
         return "void"
-    return "valid" if c["review_hash"] == review_hash(c) else "void"
+    try:
+        same_fetch = [_iso(d) for d in (c.get("review_fetched_at") or [])] == fetch_dates(c)
+    except ValueError:
+        return "void"
+    return "valid" if same_fetch and c["review_hash"] == review_hash(c) else "void"
 
 
 def auto_state(c: dict) -> str:
     """'missing', 'void' or 'valid' for the automated re-check. Valid only when it matches the current
-    evidence, the claim is unchanged since a person's `supported` review, and that review was at most
-    HUMAN_REVIEW_MAX_DAYS old when the re-check was made."""
+    evidence and fetch dates, the review event it carries is intact, the claim is unchanged since that
+    `supported` review, and the review was at most REVIEW_MAX_DAYS old when the re-check was made."""
     if not c.get("auto_check_hash"):
         return "missing"
-    if integrity_problems(c) or c["auto_check_hash"] != review_hash(c):
+    try:
+        if integrity_problems(c) or c["auto_check_hash"] != auto_check_hash(c):
+            return "void"
+    except ValueError:
+        return "void"
+    if not review_event_intact(c) or review_fetch_problems(c):
         return "void"
     if c.get("review_outcome") != "supported" or not c.get("review_claim_hash") \
             or c["review_claim_hash"] != claim_hash(c):
@@ -175,19 +261,80 @@ def auto_state(c: dict) -> str:
         gap = (_date(c["auto_checked_at"]) - _date(c["reviewed_at"])).days
     except (TypeError, ValueError, KeyError):
         return "void"
-    return "valid" if 0 <= gap <= HUMAN_REVIEW_MAX_DAYS else "void"
+    return "valid" if 0 <= gap <= REVIEW_MAX_DAYS else "void"
 
 
 def last_check(c: dict) -> tuple[dt.date | None, str | None]:
-    """The newest valid check behind a claim and who made it: ('person' review or 'auto' re-check)."""
+    """The newest valid check behind a claim and what kind it was: ('review', an AI-assessed review
+    recorded by `drift review`) or ('auto', an automated re-check by `drift auto`)."""
     best: tuple[dt.date | None, str | None] = (None, None)
     if review_state(c) == "valid" and c.get("review_outcome") == "supported":
-        best = (_date(c["reviewed_at"]), "person")
+        best = (_date(c["reviewed_at"]), "review")
     if auto_state(c) == "valid":
         d = _date(c["auto_checked_at"])
         if best[0] is None or d > best[0]:
             best = (d, "auto")
     return best
+
+
+def fetch_window_problems(fetched: list, reviewed_at, has_evidence: list[bool] | None = None) -> list[str]:
+    """Receipts whose fetch date is after the review date or more than REVIEW_FETCH_MAX_DAYS before it.
+    A receipt that holds evidence (`has_evidence[i]`) must have a fetch date; only a receipt with nothing
+    fetched and no date has nothing to assess and is skipped."""
+    out = []
+    evidence = list(has_evidence or [])
+    try:
+        day = _date(reviewed_at)
+    except ValueError:
+        return ["review date is not YYYY-MM-DD"]
+    for i, f in enumerate(fetched):
+        try:
+            d = _date(f)
+        except ValueError:
+            out.append(f"receipt {i}: fetch date {f!r} is not YYYY-MM-DD")
+            continue
+        if d is None:
+            if i < len(evidence) and evidence[i]:
+                out.append(f"receipt {i} holds evidence but has no fetch date; re-take it with `drift snapshot`")
+            continue
+        if day is None:
+            continue
+        gap = (day - d).days
+        if gap < 0:
+            out.append(f"receipt {i} was fetched {d} (after the review on {day})")
+        elif gap > REVIEW_FETCH_MAX_DAYS:
+            out.append(f"receipt {i} was fetched {d}, {gap} days before the review on {day} "
+                       f"(limit {REVIEW_FETCH_MAX_DAYS}); re-take it with `drift snapshot` and review again")
+    return out
+
+
+def review_fetch_problems(c: dict) -> list[str]:
+    """The fetch-window rule applied to the fetch dates the review event recorded."""
+    return fetch_window_problems(list(c.get("review_fetched_at") or []), c.get("reviewed_at"),
+                                 [bool(r.get("snapshot") or r.get("snapshot_hash")) for r in receipts(c)])
+
+
+def freshness_problem(r: dict, excerpt: str | None, today: dt.date) -> str | None:
+    """A receipt's optional `freshness: {field, max_age_days}` rule, for claims that are only true while
+    something recent keeps happening (e.g. "updated within the last 30 days"). `field` names the JSON key
+    whose ISO timestamp the excerpt holds (`"lastModified":"2026-09-27T02:00:18.000Z"`). Returns why the
+    excerpt breaks the rule on `today`, or None. The rule is a check setting, not claim content: it is
+    not part of the review or claim digest (adding it must not void a review; see docs/PUBLICATION.md)."""
+    rule = r.get("freshness")
+    if not rule:
+        return None
+    field, limit = rule["field"], rule["max_age_days"]
+    m = re.search(r'"' + re.escape(field) + r'"\s*:\s*"([^"]+)"', excerpt or "")
+    if not m:
+        return f"freshness: no {field} timestamp in the excerpt"
+    try:
+        seen = dt.date.fromisoformat(m.group(1)[:10])
+    except ValueError:
+        return f"freshness: {field} {m.group(1)[:40]!r} is not an ISO date"
+    age = (today - seen).days
+    if age > limit:
+        return f"freshness: {field} {seen} is {age} days old (limit {limit})"
+    return None
 
 
 def uncovered_assertions(c: dict) -> list[str]:
@@ -215,6 +362,7 @@ def publishable(c: dict) -> list[str]:
     if state == "valid":
         if c.get("review_outcome") != "supported":
             why.append(f"review outcome is {c.get('review_outcome')!r}, not 'supported'")
+        why += review_fetch_problems(c)
     elif auto_state(c) != "valid":
         why.append(f"review {state}" + ("" if state == "missing" else " and no valid automated re-check"))
     return why
@@ -242,6 +390,13 @@ def _validate_receipt(cid: str, i: int, r: dict) -> None:
         _date(r.get("fetched_at"))
     except ValueError:
         raise RegistryError(f"{where}: fetched_at must be YYYY-MM-DD") from None
+    rule = r.get("freshness")
+    if rule is not None:
+        ok = (isinstance(rule, dict) and set(rule) == {"field", "max_age_days"}
+              and isinstance(rule["field"], str) and FIELD_RE.fullmatch(rule["field"])
+              and type(rule["max_age_days"]) is int and rule["max_age_days"] > 0)
+        if not ok:
+            raise RegistryError(f"{where}: freshness must be {{field: <json key>, max_age_days: <positive int>}}")
 
 
 def validate(claims: list[dict]) -> list[str]:
@@ -303,8 +458,29 @@ def validate(claims: list[dict]) -> list[str]:
                 _date(c["reviewed_at"])
             except ValueError:
                 raise RegistryError(f"{cid}: reviewed_at must be YYYY-MM-DD") from None
+            rf = c["review_fetched_at"]
+            if not isinstance(rf, list):
+                raise RegistryError(f"{cid}: review_fetched_at must be a list of YYYY-MM-DD, one per receipt")
+            try:
+                [_date(d) for d in rf]
+            except ValueError:
+                raise RegistryError(f"{cid}: review_fetched_at must be a list of YYYY-MM-DD") from None
+            if not HASH_RE.fullmatch(str(c["review_event_hash"])):
+                raise RegistryError(f"{cid}: review_event_hash must look like sha256:<64 lowercase hex>")
             if review_state(c) == "void" and auto_state(c) != "valid":
                 void.append(cid)
+        approval = [k for k in APPROVAL_KEYS if c.get(k) not in (None, "")]
+        if approval:
+            if len(approval) != len(APPROVAL_KEYS) or not present:
+                raise RegistryError(f"{cid}: incomplete owner approval (has {approval}); only `drift approve` writes it")
+            if c["approved_by"] != OWNER_LOGIN or not APPROVAL_REF_RE.fullmatch(str(c["approval_ref"])):
+                raise RegistryError(f"{cid}: approval must name {OWNER_LOGIN} and a pull request of {REPOSITORY}")
+            try:
+                approved = _date(c["approved_at"])
+            except ValueError:
+                raise RegistryError(f"{cid}: approved_at must be YYYY-MM-DD") from None
+            if approved < _date(c["reviewed_at"]):
+                raise RegistryError(f"{cid}: approved_at {approved} is before the review it approves")
         auto_present = [k for k in AUTO_KEYS if c.get(k) not in (None, "")]
         if auto_present:
             if len(auto_present) != len(AUTO_KEYS):
@@ -374,7 +550,7 @@ def select(claims: list[dict], *, ids: list[str] | None = None, layer: int | Non
 
 
 def review_age_days(c: dict, today: dt.date) -> int | None:
-    """Days since the newest valid check (a person's supported review or a valid automated re-check).
+    """Days since the newest valid check (a supported review or a valid automated re-check).
     None when there is none."""
     d, _ = last_check(c)
     return None if d is None else (today - d).days

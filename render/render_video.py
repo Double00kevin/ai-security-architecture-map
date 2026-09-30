@@ -227,6 +227,12 @@ class Scene:
             f_g, lines = self.fit_wrap("small", gov, self.W - 2 * m)
             for i, line in enumerate(lines):
                 self.text(d, f"gov.{i}", (m, y), line, f_g, blend(RM.FOOT_TEXT, a2)); y += 46
+        note = copy.get("scope_note", "")
+        if note:
+            y += 40
+            f_n, lines = self.fit_wrap("small", note, self.W - 2 * m)
+            for i, line in enumerate(lines):
+                self.text(d, f"scope.{i}", (m, y), line, f_n, blend(RM.MUTED, a2)); y += 46
         self.footer(d, "version", copy.get("_version_line", ""), right, blend(RM.MUTED, a2))
         return im
 

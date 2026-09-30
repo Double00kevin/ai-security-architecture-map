@@ -1,13 +1,15 @@
 """`drift map`: generate a versioned map.json from reviewed evidence, and refuse what isn't.
 
     python -m drift map build --version v2026.10.04   # writes maps/v2026.10.04/map.json, MAP.md, README block
-    python -m drift map check                          # exit 1 if the newest map is expired (or missing)
+    python -m drift map check                          # exit 1 if the newest map is expired, missing, invalid
+                                                       # or shows an owner approval the registry does not back
     python -m drift map check --today 2026-11-01       # replay a date (tests, CI)
     python -m drift map verify                         # rebuild the newest version into a temp dir and diff
+    python -m drift map watch                          # scheduled CI: did the weekly job stall? governance due?
 
 A map's validity is bound to reviewed evidence, not to its version string. `build` refuses when:
-- any on-map claim lacks a valid check (a person's `supported` review, or an automated re-check that
-  carries it forward; see registry.py), has a
+- any on-map claim lacks a valid check (a `supported` AI-assessed review, or an automated re-check
+  that carries it forward; see registry.py), has a
   receipt without snapshot/hash, or has an assertion with no supporting receipt;
 - the version date is in the future, or earlier than the newest existing version;
 - a layer is outside 1..12, or a (layer, tool) pair appears twice;
@@ -21,6 +23,12 @@ warned about.
 `verify` fails when any on-map claim is no longer publishable, when the registry would now show
 different tools or labels than the published map (ship a new version), or when MAP.md, the README
 block or the PNG are not what the published map.json renders to.
+
+The newest version is the current publication and must be the current schema (SCHEMA_VERSION).
+A missing, lower, unknown or non-integer schema fails `check` and `verify` (exit 1). The only
+exception is a historical version pinned in LEGACY_MAPS by its exact version id and the SHA-256 of its
+map.json: if one of those is the newest version, `check` and `verify` report it as SKIPPED and exit
+EXIT_LEGACY (4), which is not success. Archived versions stay readable either way.
 """
 
 from __future__ import annotations
@@ -43,7 +51,24 @@ CONTROLS = registry.ROOT / "registry" / "controls.yaml"
 GOVERNANCE = registry.ROOT / "registry" / "governance.yaml"
 COPY = registry.ROOT / "registry" / "copy.yaml"
 VERSION_RE = re.compile(r"v(\d{4})\.(\d{2})\.(\d{2})(?:\.(\d+))?")  # optional .N for a same-day re-issue
-SCHEMA_VERSION = 3  # 3: per-tool checked_at/checked_by (person or automated re-check); oldest_check
+# 3: per-tool checked_at/checked_by ("person" | "auto"); oldest_check. 4: checked_by is "review" (an
+# AI-assessed review event) | "auto" (automated re-check); per-tool reviewed_by and owner approval.
+SCHEMA_VERSION = 4
+RENEW_DAYS = 7  # the weekly job publishes a fresh version when the published one has this many days left
+WEEKLY_RUN_WEEKDAY = 5  # Saturday (date.weekday()); scripts/weekly-check.ps1 is scheduled then
+GOVERNANCE_WARN_DAYS = 7  # `map watch` fails when a governance review is due within this many days
+EXIT_OK, EXIT_FAILED, EXIT_LEGACY = 0, 1, 4  # 4: the newest version is a pinned legacy map; never success
+# Published versions from before the current schema, pinned by exact version id and map_file_sha256 of
+# their map.json: the SHA-256 of the committed (LF) bytes, with CRLF normalised to LF before hashing so a
+# Windows checkout (core.autocrlf) hashes the same. Any other byte difference breaks the pin. Only these
+# can be read as legacy; a lower or missing schema anywhere else is a failure. Never add a version here to
+# make a check pass.
+LEGACY_MAPS = {
+    "v2026.09.27": "sha256:dae07e234a5f1eb8d471458451b18dc87c0e8c0c265ede14b3a147f76a8ac918",
+    "v2026.09.27.1": "sha256:1ffabdeb9cbe4353b2989277fa3dbd7ec64aad77b9ad48e691a2affc81e87324",
+    "v2026.09.28": "sha256:4e2251a2cee93c977207e4f4519bfcb43646a47479ed9bf4950d1675bc56ad37",
+    "v2026.09.29": "sha256:ec857446ae72bb158501418aa8fa76fcd2760f9dbbe98b465f737df3a266c4e6",
+}
 
 
 class MapError(Exception):
@@ -133,8 +158,8 @@ def preflight(claims: list[dict], version: str, today: dt.date, versions: list[s
 
 
 def expiry(claims: list[dict], version: str) -> tuple[dt.date, str | None]:
-    """min(oldest check on the map + 30 days, version date + 30 days). A check is a person's supported
-    review or a valid automated re-check, whichever is newer for that claim."""
+    """min(oldest check on the map + 30 days, version date + 30 days). A check is a supported review or
+    a valid automated re-check, whichever is newer for that claim."""
     by_version = version_date(version) + dt.timedelta(days=registry.STALE_DAYS)
     checked = [d for d, _ in (registry.last_check(c) for c in registry.on_map(claims)) if d]
     if not checked:
@@ -143,7 +168,7 @@ def expiry(claims: list[dict], version: str) -> tuple[dt.date, str | None]:
     return min(by_version, oldest + dt.timedelta(days=registry.STALE_DAYS)), oldest.isoformat()
 
 
-def oldest_human_review(claims: list[dict]) -> str | None:
+def oldest_review(claims: list[dict]) -> str | None:
     dates = [registry._date(c["reviewed_at"]) for c in registry.on_map(claims)
              if c.get("reviewed_at") and c.get("review_outcome") == "supported"]
     return min(dates).isoformat() if dates else None
@@ -182,6 +207,10 @@ def build_map(claims: list[dict], controls: list[dict], version: str, governance
                 "checked_at": str(registry.last_check(c)[0] or ""),
                 "checked_by": registry.last_check(c)[1] or "",
                 "reviewed_at": str(c.get("reviewed_at") or ""),
+                "reviewed_by": c.get("reviewed_by") or "",
+                "owner_approved": registry.owner_approved(c),
+                "approved_at": str(c["approved_at"]) if registry.owner_approved(c) else "",
+                "approval_ref": c["approval_ref"] if registry.owner_approved(c) else None,
                 "review_hash": c.get("review_hash"),
                 "check_hash": c.get("auto_check_hash") if registry.last_check(c)[1] == "auto" else c.get("review_hash"),
             } for c in tools],
@@ -194,7 +223,7 @@ def build_map(claims: list[dict], controls: list[dict], version: str, governance
         "date": date.isoformat(),
         "expires": expires.isoformat(),
         "oldest_check": oldest,
-        "oldest_review": oldest_human_review(claims),
+        "oldest_review": oldest_review(claims),
         "trust_window_days": registry.STALE_DAYS,
         "title": "AI Architecture Map",
         "author": "@00Kevin",
@@ -248,7 +277,7 @@ def validate_publication_dates(m: dict) -> None:
         expiry_date = dt.date.fromisoformat(m["expires"])
         limit = day + dt.timedelta(days=registry.STALE_DAYS)
         schema = m.get("schema_version", 1)
-        if schema not in (1, 2, 3):
+        if type(schema) is not int or schema not in (1, 2, 3, 4):
             raise MapError(f"unsupported map schema {schema}")
         if schema >= 2:
             tools = [t for layer in m["layers"] for t in layer["tools"]]
@@ -257,24 +286,45 @@ def validate_publication_dates(m: dict) -> None:
             reviews = [dt.date.fromisoformat(t["reviewed_at"]) for t in tools]
             checks = [dt.date.fromisoformat(t["checked_at"]) for t in tools] if schema >= 3 else reviews
             if any(review > checked or checked > day for review, checked in zip(reviews, checks)):
-                raise MapError("publication checks must be between the human review and version date")
+                raise MapError("publication checks must be between the review and version date")
             if m["oldest_review"] != min(reviews).isoformat():
                 raise MapError("oldest_review does not match the published tool reviews")
             if schema >= 3:
                 if m["oldest_check"] != min(checks).isoformat():
                     raise MapError("oldest_check does not match the published tool checks")
+                by_review = "person" if schema == 3 else "review"  # schema 3 called a review "person"
                 for t, reviewed, checked in zip(tools, reviews, checks):
-                    if t["checked_by"] not in ("person", "auto"):
-                        raise MapError("invalid checked_by in publication")
-                    if t["checked_by"] == "person" and checked != reviewed:
-                        raise MapError("person check date differs from human review")
-                    if t["checked_by"] == "auto" and (checked - reviewed).days > registry.HUMAN_REVIEW_MAX_DAYS:
-                        raise MapError("automated check exceeds the human review renewal window")
+                    if t["checked_by"] not in (by_review, "auto"):
+                        raise MapError(f"invalid checked_by {t['checked_by']!r} in a schema-{schema} publication")
+                    if t["checked_by"] == by_review and checked != reviewed:
+                        raise MapError("review check date differs from the review date")
+                    if t["checked_by"] == "auto" and (checked - reviewed).days > registry.REVIEW_MAX_DAYS:
+                        raise MapError("automated check exceeds the review renewal window")
+                    if schema >= 4:
+                        _validate_approval(t, reviewed, day)
             limit = min(limit, min(checks) + dt.timedelta(days=registry.STALE_DAYS))
         if expiry_date != limit:
             raise MapError(f"publication expires {expiry_date}, but its recorded checks require {limit}")
     except (KeyError, TypeError, ValueError) as e:
         raise MapError(f"invalid publication dates: {e}") from e
+
+
+def _validate_approval(t: dict, reviewed: dt.date, published: dt.date) -> None:
+    """Schema 4: a tool is labelled owner-approved only with a PR reference of this repository and an
+    approval date between the review and the publication date. Whether the registry backs it is checked
+    by `approval_problems` (verify)."""
+    if t.get("owner_approved") is True:
+        ref = t.get("approval_ref") or ""
+        try:
+            approved = dt.date.fromisoformat(t.get("approved_at") or "")
+        except ValueError:
+            approved = None
+        if not registry.APPROVAL_REF_RE.fullmatch(ref) or approved is None or approved < reviewed:
+            raise MapError(f"{t.get('name')}: owner approval without a valid date and pull request reference")
+        if approved > published:
+            raise MapError(f"{t.get('name')}: owner approval dated {approved}, after the publication date {published}")
+    elif t.get("owner_approved") is not False or t.get("approval_ref") is not None or t.get("approved_at"):
+        raise MapError(f"{t.get('name')}: inconsistent owner approval fields")
 
 
 def governance_warnings(governance: list[dict], today: dt.date) -> list[str]:
@@ -295,7 +345,8 @@ README_BEGIN, README_END = "<!-- map:begin (generated by `python -m drift map bu
 
 def render_map_markdown(m: dict) -> str:
     """MAP.md: the whole map as text, so the repo says what it covers without opening the PNG."""
-    if m.get("schema_version", 1) >= 3:
+    schema = m.get("schema_version", 1)
+    if type(schema) is int and schema >= 3:
         return _render_map_markdown_v3(m)
     copy = m.get("copy", {})
     L = [f"# {copy.get('title', m.get('title', 'AI Architecture Map'))} — {copy.get('title_accent', '')}".rstrip(" —"),
@@ -322,32 +373,56 @@ def render_map_markdown(m: dict) -> str:
     L += ["## How to read a receipt", "",
           "Each row links to the primary source the claim rests on. `registry/claims.yaml` also holds the short excerpt "
           "that was read, its SHA-256, the version seen, the date it was fetched, which assertions it supports, and the "
-          "review record of the person who read it. `python -m drift check` re-fetches every source weekly and flags a "
+          "review record behind it. `python -m drift check` re-fetches every source weekly and flags a "
           "new version, a changed excerpt, a lifecycle signal, or a review older than 30 days.", ""]
     return "\n".join(L)
 
 
 def _render_map_markdown_v3(m: dict) -> str:
+    """Schema 3 and 4. Says what each check was: an AI-assessed review (`drift review`; the assessor is
+    named when the map records it), an automated re-check (`drift auto`), and owner-approved only where
+    the map records a valid approval."""
     copy = m.get("copy", {})
-    who = {"person": "review", "auto": "automated re-check"}
+    tools = [t for layer in m["layers"] for t in layer["tools"]]
+    assessors = sorted({t["reviewed_by"] for t in tools if t.get("reviewed_by")})
+    ai = bool(assessors) and all(a in registry.AI_ASSESSORS for a in assessors)
+    approved = sum(1 for t in tools if t.get("owner_approved") is True)
+    who = {"person": "review", "review": "AI-assessed review" if ai else "review", "auto": "automated re-check"}
+    if assessors:
+        kind = "an AI-assessed review" if ai else "a recorded review"
+        reviews = (f"{kind} of that evidence by {', '.join(f'`{a}`' for a in assessors)}"
+                   + (f" (oldest review {m['oldest_review']})" if m.get("oldest_review") else ""))
+        status = (f"; {approved} of {len(tools)} reviews {'is' if approved == 1 else 'are'} owner-approved."
+                  if approved else "; no review is owner-approved yet.")
+    else:
+        reviews = "a recorded review" + (f" (oldest review {m['oldest_review']})" if m.get("oldest_review") else "")
+        status = "."
     L = [f"# {copy.get('title', m.get('title', 'AI Architecture Map'))} — {copy.get('title_accent', '')}".rstrip(" —"),
          "", f"Version **{m['version']}** (generated {m['date']}, re-check due {m['expires']}). "
          f"{m['counts']['tools']} tools across {m['counts']['layers']} layers, one security control per layer. "
-         f"Every tool has a receipt in `registry/claims.yaml`, read by a person"
-         + (f" (oldest human review {m['oldest_review']})" if m.get("oldest_review") else "")
-         + (f" and re-checked since; the oldest check behind this version is from {m['oldest_check']}." if m.get("oldest_check") else "."),
+         f"Every tool has a receipt in `registry/claims.yaml` (a short primary-source excerpt and its SHA-256) and "
+         f"{reviews}{status}"
+         + (f" The oldest check behind this version is from {m['oldest_check']}." if m.get("oldest_check") else ""),
          "", f"![{copy.get('title', 'AI Architecture Map')} {m['version']}](maps/{m['version']}/map.png)", "",
          copy.get("subtitle", ""), ""]
+    if copy.get("scope_note"):
+        L += [f"*{copy['scope_note']}*", ""]
     for layer in m["layers"]:
         L += [f"## {layer['number']:02d} · {layer['name']}", "",
               f"**Security control:** {layer['control']}", "",
-              "| Tool | Status | Owner | Receipt | Last check | Human review |", "|---|---|---|---|---|---|"]
+              "| Tool | Status | Owner | Receipt | Last check | Review |", "|---|---|---|---|---|---|"]
         for t in layer["tools"]:
             owner = t.get("owner") or ""
             if t.get("ownership"):
                 owner = f"{owner} ({t['ownership']})" if owner else t["ownership"]
             check = f"{t.get('checked_at', '')} ({who.get(t.get('checked_by'), t.get('checked_by', ''))})" if t.get("checked_at") else ""
-            L.append(f"| {t['name']} | {t['status']} | {owner} | [{t['id']}]({t['source_url']}) | {check} | {t.get('reviewed_at', '')} |")
+            review = t.get("reviewed_at", "")
+            if t.get("reviewed_by"):
+                label = "AI-assessed" if t["reviewed_by"] in registry.AI_ASSESSORS else "assessed by"
+                review += f", {label} ({t['reviewed_by']})" if label == "AI-assessed" else f", {label} {t['reviewed_by']}"
+            if t.get("owner_approved") is True:
+                review += f"; owner-approved {t['approved_at']} ([PR]({t['approval_ref']}))"
+            L.append(f"| {t['name']} | {t['status']} | {owner} | [{t['id']}]({t['source_url']}) | {check} | {review} |")
         L.append("")
     if m.get("governance"):
         L += [f"## {copy.get('governance_label', 'Govern it all').title()}", "",
@@ -355,11 +430,15 @@ def _render_map_markdown_v3(m: dict) -> str:
         L += [f"- [{g['name']}]({g['source_url']})" for g in m["governance"]] + [""]
     L += ["## How to read a receipt", "",
           "Each row links to the primary source the claim rests on. `registry/claims.yaml` also holds the short excerpt "
-          "that was read, its SHA-256, the version seen, the date it was fetched, which assertions it supports, and the "
-          "review record of the person who read it. Every Saturday `python -m drift check` re-fetches every source. "
-          "Routine changes (a new version number or date, nothing else) are re-checked automatically and the claim "
-          "keeps its person's review for up to 180 days; anything else (a changed page, a lifecycle or ownership "
-          "signal, a source that can't be reached) waits for a person. \"Last check\" says which kind of check it was.", ""]
+          "that was fetched, its SHA-256, the version seen, the date it was fetched, which assertions it supports, and "
+          "the review event: which assessor judged whether the excerpt supports the claim, when, and with what outcome, "
+          "bound by digest to the claim and the evidence. An AI assessment is not proof; the excerpt and its hash are "
+          "the evidence, and anyone can re-check them. The owner's approval, the human decision, is recorded only "
+          "from a pull request the owner merged. Every Saturday `python -m drift check` re-fetches every source. "
+          "Routine changes (a new version number or date, nothing else) are re-checked automatically by a "
+          "deterministic rule, and the claim keeps its review for up to 180 days; anything else (a changed page, a "
+          "lifecycle or ownership signal, a time-based claim that no longer holds, a source that can't be reached) "
+          "waits for the owner's decision. \"Last check\" says which kind of check it was.", ""]
     return "\n".join(L)
 
 
@@ -419,24 +498,143 @@ def latest_map(maps_dir: Path = MAPS_DIR) -> Path | None:
     return max(candidates, key=lambda p: version_key(p.parent.name))
 
 
-def check_expiry(map_path: Path | None, today: dt.date) -> tuple[bool, str]:
-    if map_path is None:
-        return False, "no map found: run `python -m drift map build --version vYYYY.MM.DD`"
+def map_file_sha256(path: Path) -> str:
+    """SHA-256 of a map.json with CRLF normalised to LF (a Windows checkout must hash the same)."""
+    import hashlib
+    return "sha256:" + hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def publication_state(map_path: Path) -> tuple[str, dict | None, str]:
+    """('current', map, '') for a current-schema map; ('legacy', map, why) for a pinned historical map
+    (exact version id and file digest); ('invalid', map or None, why) for everything else."""
+    p = Path(map_path)
     try:
-        m = json.loads(Path(map_path).read_text(encoding="utf-8"))
+        m = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return "invalid", None, f"unreadable map.json: {e}"
+    if not isinstance(m, dict):
+        return "invalid", None, "map.json is not an object"
+    schema, version = m.get("schema_version"), m.get("version")
+    if version != p.parent.name:
+        return "invalid", m, f"map.json says version {version!r} but lives in {p.parent.name}"
+    if type(schema) is int and schema == SCHEMA_VERSION:
+        return "current", m, ""
+    pinned = LEGACY_MAPS.get(p.parent.name)
+    if pinned and pinned == map_file_sha256(p):
+        return "legacy", m, (f"{version} is a pinned legacy schema-{schema} publication (built before schema "
+                             f"{SCHEMA_VERSION}); it cannot be checked as the current publication")
+    return "invalid", m, (f"{version} has schema {schema!r}; the current publication must be schema "
+                          f"{SCHEMA_VERSION} (only pinned historical versions may be older)")
+
+
+def check_state(map_path: Path | None, today: dt.date, claims: list[dict]) -> tuple[str, str]:
+    """('ok' | 'failed' | 'skipped', message) for the newest published map: current schema, the
+    publication's own dates, not expired, and every owner approval it shows backed by the registry
+    (`approval_problems`, the same comparison `map verify` runs). No rendering."""
+    if map_path is None:
+        return "failed", "no map found: run `python -m drift map build --version vYYYY.MM.DD`"
+    state, m, why = publication_state(map_path)
+    if state == "legacy":
+        return "skipped", f"SKIPPED: {why}; ship a current version"
+    if state != "current":
+        return "failed", f"invalid map: {why}"
+    try:
         validate_publication_dates(m)
         if version_date(m["version"]) > today:
             raise MapError("publication version is in the future")
-    except (OSError, ValueError, MapError) as e:
-        return False, f"invalid map: {e}"
+    except (ValueError, MapError) as e:
+        return "failed", f"invalid map: {e}"
+    unbacked = approval_problems(m, claims)
+    if unbacked:
+        return "failed", "invalid map: " + "; ".join(unbacked)
     expires = dt.date.fromisoformat(m["expires"])
     left = (expires - today).days
     if left < 0:
-        return False, f"{m['version']} EXPIRED {-left} day(s) ago (expires {m['expires']}); ship a new version"
-    return True, f"{m['version']} valid, {left} day(s) left (expires {m['expires']})"
+        return "failed", f"{m['version']} EXPIRED {-left} day(s) ago (expires {m['expires']}); ship a new version"
+    return "ok", f"{m['version']} valid, {left} day(s) left (expires {m['expires']})"
+
+
+def check_expiry(map_path: Path | None, today: dt.date, claims: list[dict] | None = None) -> tuple[bool, str]:
+    """check_state as (ok, message); without claims it reads the default registry."""
+    state, msg = check_state(map_path, today, registry.load() if claims is None else claims)
+    return state == "ok", msg
+
+
+def stalled_publication_margin(today: dt.date) -> int:
+    """Fewest days a healthy published map can have left today. The weekly job (Saturdays) publishes a
+    new version whenever the current one has RENEW_DAYS or fewer days left, so after a healthy run the
+    map had at least RENEW_DAYS + 1 days left, and d days later at least RENEW_DAYS + 1 - d. On a
+    Saturday the day's run may not have happened yet, so d counts from the previous Saturday (7)."""
+    d = (today.weekday() - WEEKLY_RUN_WEEKDAY) % 7 or 7
+    return RENEW_DAYS + 1 - d
+
+
+def watch(map_path: Path | None, governance: list[dict], today: dt.date, claims: list[dict]) -> list[str]:
+    """Detection for the scheduled CI run: problems the owner must hear about before the map lapses."""
+    problems = []
+    state, msg = check_state(map_path, today, claims)
+    if state != "ok":
+        problems.append(f"map check: {msg}")
+    else:
+        m = json.loads(Path(map_path).read_text(encoding="utf-8"))
+        left, margin = (dt.date.fromisoformat(m["expires"]) - today).days, stalled_publication_margin(today)
+        if left < margin:
+            problems.append(f"{m['version']} expires {m['expires']} ({left} day(s) left): the weekly job should already "
+                            f"have published a new version (it publishes at <= {RENEW_DAYS} days left; a healthy map has "
+                            f">= {margin} left today). Check the weekly run's logs and any 'weekly-run-failed' issue.")
+    for g in governance:
+        due = g.get("review_due")
+        name = g.get("short") or g["name"]
+        if not due:
+            problems.append(f"governance {name}: no review_due recorded")
+        elif (registry._date(due) - today).days <= GOVERNANCE_WARN_DAYS:
+            problems.append(f"governance {name}: review due {due} (within {GOVERNANCE_WARN_DAYS} days or overdue); "
+                            "re-check the source and update registry/governance.yaml")
+    return problems
 
 
 CONTENT_TOOL_KEYS = ("name", "id", "status", "owner", "ownership", "source_url")
+APPROVAL_TOOL_KEYS = ("owner_approved", "approval_ref")
+
+
+def approval_problems(m: dict, claims: list[dict]) -> list[str]:
+    """Every tool a publication labels owner-approved must match an intact approval, on the same review
+    event, in the registry: same claim, same review (hash, date, assessor), same PR reference and approval
+    date, approved no later than the publication date. A publication may under-report (omit an approval
+    recorded after it); it may never show one the registry does not back. A superseded or revoked
+    approval therefore fails `map verify` until a new version is published (`drift auto` builds one)."""
+    by_id = {c["id"]: c for c in claims}
+    day = version_date(m["version"])
+    out = []
+    for layer in m.get("layers", []):
+        for t in layer.get("tools", []):
+            if t.get("owner_approved") is not True:
+                continue
+            c = by_id.get(t.get("id"))
+            if c is None:
+                why = "the registry has no such claim"
+            elif not registry.owner_approved(c):
+                why = "the registry holds no intact owner approval for it"
+            elif (c.get("review_hash"), str(c.get("reviewed_at")), c.get("reviewed_by")) != \
+                    (t.get("review_hash"), t.get("reviewed_at"), t.get("reviewed_by")):
+                why = "the registry's approval is on a different review event"
+            elif (str(c["approval_ref"]), str(c["approved_at"])) != (t.get("approval_ref"), t.get("approved_at")):
+                why = (f"the registry records {c['approval_ref']} on {c['approved_at']}, "
+                       f"not {t.get('approval_ref')} on {t.get('approved_at')}")
+            elif registry._date(c["approved_at"]) > day:
+                why = f"it was approved {c['approved_at']}, after the publication date {day}"
+            else:
+                continue
+            out.append(f"{t.get('id')} ({t.get('name')}) is published as owner-approved but {why}")
+    return out
+
+
+def approvals(m: dict) -> list[tuple]:
+    """Which tools a map labels owner-approved, and by which pull request. Compared by `drift auto` so a
+    recorded approval is published by the next weekly run. Not part of `content`: `map verify` stays green
+    while a published version under-reports approvals, and `approval_problems` fails it on any it overstates."""
+    return [(t.get("id"), t.get("owner_approved") is True, t.get("approval_ref"))
+            for layer in m.get("layers", []) for t in layer.get("tools", [])]
 
 
 def content(m: dict) -> dict:
@@ -474,33 +672,43 @@ def verify_image(directory: Path, m: dict) -> list[str]:
     return errors
 
 
-def verify(maps_dir: Path = MAPS_DIR, registry_path: Path = registry.REGISTRY, readme: Path = README,
-           map_md: Path = MAP_MD, render: bool = True) -> tuple[bool, list[str]]:
-    """Check the newest published version three ways:
+def verify(maps_dir: Path = MAPS_DIR, registry_path: Path | None = None, readme: Path | None = None,
+           map_md: Path | None = None, render: bool = True) -> tuple[bool, list[str]]:
+    state, msgs = verify_publication(maps_dir, registry_path, readme, map_md, render)
+    return state == "ok", msgs
+
+
+def verify_publication(maps_dir: Path = MAPS_DIR, registry_path: Path | None = None, readme: Path | None = None,
+                       map_md: Path | None = None, render: bool = True) -> tuple[str, list[str]]:
+    """('ok' | 'failed' | 'skipped', messages). Check the newest published version three ways:
     1. evidence: every on-map claim is publishable now (valid, supported check; digests match);
     2. content: the tools, labels, controls, governance and copy a rebuild from today's registry would
        show equal what the published map shows (a change needs a new version);
     3. artifacts: dates obey the publication policy; MAP.md, the README block, PNG pixels and sidecar
        are exactly what the published map.json renders to.
-    Maps from before review records existed (schema 1) are reported as legacy and skipped."""
+    The newest version must be the current schema; a pinned legacy map is 'skipped' (not success)."""
+    registry_path = registry_path or registry.REGISTRY
+    readme, map_md = readme or README, map_md or MAP_MD
     p = latest_map(maps_dir)
     if p is None:
-        return False, ["no map found"]
-    committed = json.loads(p.read_text(encoding="utf-8"))
+        return "failed", ["no map found"]
+    state, committed, why = publication_state(p)
+    if state == "legacy":
+        return "skipped", [f"SKIPPED: {why}; not reproducible from current inputs. Ship a current version."]
+    if state != "current":
+        return "failed", [why]
     version = committed["version"]
-    if committed.get("schema_version", 1) < 2:
-        return True, [f"{version} is a legacy schema-{committed.get('schema_version', 1)} map built before "
-                      f"review records existed; not reproducible from current inputs (skipped). The next build is checked."]
     claims = registry.load(registry_path)
     diffs: list[str] = []
     unpublishable = [f"{c['id']}: {'; '.join(why)}" for c in registry.on_map(claims) if (why := registry.publishable(c))]
     if unpublishable:
         diffs.append(f"{version} rests on {len(unpublishable)} on-map claim(s) that are no longer "
-                     "publishable (a person must review them):\n  - " + "\n  - ".join(unpublishable))
+                     "publishable (each needs a new review):\n  - " + "\n  - ".join(unpublishable))
     try:
         validate_map(committed, claims, dates=False)
     except MapError as e:
         diffs.append(str(e))
+    diffs.extend(approval_problems(committed, claims))
 
     def cmp(name: str, want: str, got: str, how: str = "differs from what the published map.json renders to") -> None:
         if want != got:
@@ -515,8 +723,9 @@ def verify(maps_dir: Path = MAPS_DIR, registry_path: Path = registry.REGISTRY, r
     cmp("README map block", readme_block(Path(readme).read_text(encoding="utf-8")) or "", render_readme_block(committed))
     if render:
         diffs.extend(verify_image(p.parent, committed))
-    return not diffs, diffs or [f"{version}: every on-map claim publishable; content matches the registry; "
-                                f"publication dates valid; MAP.md, README block, PNG pixels and map.txt match the published map.json"]
+    return ("failed" if diffs else "ok"), diffs or [
+        f"{version}: every on-map claim publishable; content matches the registry; "
+        f"publication dates valid; MAP.md, README block, PNG pixels and map.txt match the published map.json"]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -531,10 +740,19 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--today", help="override today's date (tests, replays)")
     c = sub.add_parser("check", help="fail if the newest map is expired")
     c.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
+    c.add_argument("--registry", type=Path, default=registry.REGISTRY)
     c.add_argument("--today")
+    w = sub.add_parser("watch", help="scheduled CI: fail if the weekly job stalled or a governance review is due")
+    w.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
+    w.add_argument("--governance", type=Path, default=GOVERNANCE)
+    w.add_argument("--registry", type=Path, default=registry.REGISTRY)
+    w.add_argument("--today")
     v = sub.add_parser("verify", help="rebuild the newest version from current inputs and diff against the committed files")
     v.add_argument("--maps-dir", type=Path, default=MAPS_DIR)
     v.add_argument("--no-render", action="store_true", help="skip the PNG sidecar comparison")
+    v.add_argument("--registry", type=Path, default=registry.REGISTRY)
+    v.add_argument("--readme", type=Path, default=README, help=argparse.SUPPRESS)
+    v.add_argument("--map-md", type=Path, default=MAP_MD, help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
 
     try:
@@ -554,14 +772,27 @@ def main(argv: list[str] | None = None) -> int:
                 MAP_MD.write_text(render_map_markdown(m), encoding="utf-8", newline="\n")
                 print(f"wrote {MAP_MD.name}" + ("; README map block updated" if update_readme(m) else "; README has no map markers"))
             return 0
+        codes = {"ok": EXIT_OK, "failed": EXIT_FAILED, "skipped": EXIT_LEGACY}
+        if args.cmd == "watch":
+            today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
+            problems = watch(latest_map(args.maps_dir), load_governance(args.governance), today,
+                             registry.load(args.registry))
+            for p in problems:
+                print(f"map watch FAILED: {p}")
+            if not problems:
+                print(f"map watch: ok (publication on schedule; no governance review due within {GOVERNANCE_WARN_DAYS} days)")
+            return EXIT_FAILED if problems else EXIT_OK
         if args.cmd == "verify":
-            ok, msgs = verify(args.maps_dir, render=not args.no_render)
+            state, msgs = verify_publication(args.maps_dir, args.registry, args.readme, args.map_md,
+                                             render=not args.no_render)
             for msg in msgs:
-                print(("map verify: " if ok else "map verify FAILED: ") + msg)
-            return 0 if ok else 1
-        ok, msg = check_expiry(latest_map(args.maps_dir), dt.date.fromisoformat(args.today) if args.today else dt.date.today())
-        print(("map check: " if ok else "map check FAILED: ") + msg)
-        return 0 if ok else 1
+                print({"ok": "map verify: ", "failed": "map verify FAILED: ", "skipped": "map verify "}[state] + msg)
+            return codes[state]
+        state, msg = check_state(latest_map(args.maps_dir),
+                                 dt.date.fromisoformat(args.today) if args.today else dt.date.today(),
+                                 registry.load(args.registry))
+        print({"ok": "map check: ", "failed": "map check FAILED: ", "skipped": "map check "}[state] + msg)
+        return codes[state]
     except (MapError, registry.RegistryError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

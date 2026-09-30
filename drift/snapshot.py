@@ -6,8 +6,9 @@ located page excerpt), hashes it, and writes snapshot / snapshot_hash / last_ver
 back to registry/claims.yaml.
 
 It never changes `claim`, `status`, `owner`, `assertions`, `supports` or the review record, and it
-never creates a review. If the new evidence differs from what was reviewed, the review's hash stops
-matching and the claim cannot publish until a person reads the new excerpt and runs `drift review`.
+never creates a review. Re-taking evidence changes its fetch date, which is part of the review event,
+so the claim cannot publish until the new excerpt is assessed and a new review is recorded with
+`drift review` (even when the excerpt itself is unchanged).
 
 Usage:
     python -m drift snapshot --all
@@ -94,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.delay:
                 time.sleep(args.delay)
         if not args.dry_run and before == "valid" and registry.review_state(c) != "valid":
-            print(f"{'VOIDED':8} {c['id']:30} evidence changed since review: read it, then `python -m drift review --id {c['id']}`")
+            print(f"{'VOIDED':8} {c['id']:30} evidence re-taken since review: assess it, then `python -m drift review --id {c['id']}`")
 
     if not args.dry_run:
         registry.save(claims, args.registry)

@@ -1,4 +1,4 @@
-"""`drift auto`: routine weeks publish with no person in the loop; anything else waits for one."""
+"""`drift auto`: routine weeks publish with no one in the loop; anything else waits for the owner's decision."""
 
 import datetime as dt
 import json
@@ -85,7 +85,7 @@ def test_mask_treats_version_and_date_changes_as_routine():
     assert A.mask("pypi x 1.2.3 uploaded 2026-09-24: X SDK") != A.mask("pypi x 1.2.4 uploaded 2026-09-28: X SDK (deprecated)")
 
 
-# ---- decide(): what may be renewed without a person ----
+# ---- decide(): what may be renewed without the owner ----
 
 def test_unchanged_and_version_bump_are_renewed():
     c = mini(TODAY - dt.timedelta(days=10))[0]
@@ -96,16 +96,16 @@ def test_unchanged_and_version_bump_are_renewed():
 
 @pytest.mark.parametrize("change,expect", [
     ("summary", "beyond version numbers and dates"),
-    ("page", "pages are read by a person"),
+    ("page", "a changed page needs a new review"),
     ("lifecycle", "lifecycle"),
     ("error", "error"),
-    ("edited", "changed since the last human review"),
+    ("edited", "changed since the last review"),
     ("old_review", "periodic review due"),
     ("unsupported", "no supported review"),
     ("missing_receipt", "not every receipt"),
     ("digest", "does not match its digest"),
 ])
-def test_everything_else_waits_for_a_person(change, expect):
+def test_everything_else_waits_for_the_owner(change, expect):
     c = mini(TODAY - dt.timedelta(days=10))[0]
     f = [finding(c)]
     if change == "summary":
@@ -121,7 +121,7 @@ def test_everything_else_waits_for_a_person(change, expect):
     elif change == "edited":
         c["claim"] = "Tool 1.0 is the best tool ever"  # not re-reviewed
     elif change == "old_review":
-        c = mini(TODAY - dt.timedelta(days=R.HUMAN_REVIEW_MAX_DAYS + 1))[0]
+        c = mini(TODAY - dt.timedelta(days=R.REVIEW_MAX_DAYS + 1))[0]
         f = [finding(c)]
     elif change == "unsupported":
         c = reviewed(claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x")), when=TODAY.isoformat(), outcome="partial")
@@ -141,11 +141,11 @@ def test_routine_week_renews_everything_and_publishes_nothing_when_not_due(world
     c0 = world["claims"][0]
     fs[0] = finding(c0, new=pkg("tool-1-0", "1.1.0", TODAY), version="1.1.0")
     code, out, after = run(world, fs)
-    assert code == A.EXIT_OK and out["summary"] == {"renewed": 69, "needs_person": 0}
+    assert code == A.EXIT_OK and out["summary"] == {"renewed": 69, "needs_owner": 0}
     assert out["version"]["action"] == "none" and "re-check due in 20 day(s)" in out["version"]["why"]
     a0 = after[0]
     assert a0["snapshot"] == pkg("tool-1-0", "1.1.0", TODAY) and a0["last_version"] == "1.1.0"
-    assert R.auto_state(a0) == "valid" and R.review_state(a0) == "void"  # the person's review is carried, not rewritten
+    assert R.auto_state(a0) == "valid" and R.review_state(a0) == "void"  # the review is carried, not rewritten
     assert R.last_check(a0) == (TODAY, "auto") and R.publishable(a0) == []
     assert a0["reviewed_by"] == "tester" and a0["reviewed_at"] == (TODAY - dt.timedelta(days=10)).isoformat()
 
@@ -154,8 +154,8 @@ def test_a_page_change_waits_and_the_rest_still_renews(world):
     fs = [finding(c) for c in world["claims"]]
     fs[5] = finding(world["claims"][5], reasons=["lifecycle"])
     code, out, after = run(world, fs)
-    assert code == A.EXIT_NEEDS_PERSON
-    assert [x["id"] for x in out["needs_person"]] == [world["claims"][5]["id"]]
+    assert code == A.EXIT_NEEDS_OWNER
+    assert [x["id"] for x in out["needs_owner"]] == [world["claims"][5]["id"]]
     assert "auto_checked_at" not in after[5] and R.publishable(after[5]) == []  # untouched, still valid on its old check
     assert out["summary"]["renewed"] == 68
 
@@ -172,16 +172,17 @@ def test_publishes_a_new_version_when_the_published_one_is_close_to_its_deadline
     code, out, after = run(world, [finding(c) for c in claims])
     assert code == A.EXIT_OK and out["version"]["action"] == f"built v{TODAY:%Y.%m.%d}"
     m = json.loads((maps / f"v{TODAY:%Y.%m.%d}" / "map.json").read_text())
-    assert m["schema_version"] == 3 and m["oldest_check"] == TODAY.isoformat()
+    assert m["schema_version"] == M.SCHEMA_VERSION and m["oldest_check"] == TODAY.isoformat()
     assert m["expires"] == (TODAY + dt.timedelta(days=30)).isoformat()
-    assert m["oldest_review"] == old.isoformat()  # the person's review date is still shown, honestly
+    assert m["oldest_review"] == old.isoformat()  # the review date is still shown, honestly
     assert all(t["checked_by"] == "auto" for layer in m["layers"] for t in layer["tools"])
     assert (maps / f"v{TODAY:%Y.%m.%d}" / "map.png").exists() and (maps / f"v{TODAY:%Y.%m.%d}" / "map.txt").exists()
 
 
 def test_publishes_a_new_version_when_a_reviewed_change_alters_what_readers_see(world):
     c = world["claims"][0]
-    c.update(owner="BigCo", assertions=["availability", "ownership"], supports=["availability", "ownership"])
+    c.update(owner="BigCo", assertions=["availability", "ownership"], supports=["availability", "ownership"],
+             fetched_at=TODAY.isoformat())  # re-taken before the review, as `drift snapshot` would
     review.record(c, "supported", "tester", TODAY)
     R.save(world["claims"], world["reg"])
     code, out, _ = run(world, [finding(x) for x in world["claims"]])
@@ -201,8 +202,8 @@ def test_never_builds_when_the_newest_check_would_be_expired(tmp_path, monkeypat
     fs = [finding(c) for c in claims]
     fs[0] = finding(claims[0], reasons=["error"])
     code, out, _ = run(world, fs)
-    assert code == A.EXIT_NEEDS_PERSON and out["version"]["action"] == "blocked"
-    assert "expired" in out["version"]["why"] and any(x["id"] == "(map)" for x in out["needs_person"])
+    assert code == A.EXIT_NEEDS_OWNER and out["version"]["action"] == "blocked"
+    assert "expired" in out["version"]["why"] and any(x["id"] == "(map)" for x in out["needs_owner"])
 
 
 def test_refuses_a_report_that_does_not_match_the_registry(world):
@@ -220,12 +221,12 @@ def test_dry_run_writes_nothing(world):
     assert not list((world["tmp"] / "reports").glob("*-auto.*"))
 
 
-def test_a_person_review_clears_the_automated_record():
+def test_a_new_review_clears_the_automated_record():
     c = mini(TODAY - dt.timedelta(days=10))[0]
     A.apply(c, [finding(c)], "unchanged", TODAY)
     assert R.auto_state(c) == "valid"
     review.record(c, "supported", "tester", TODAY)
-    assert all(k not in c for k in R.AUTO_KEYS) and R.last_check(c) == (TODAY, "person")
+    assert all(k not in c for k in R.AUTO_KEYS) and R.last_check(c) == (TODAY, "review")
 
 
 def test_automated_record_is_void_once_the_claim_changes():
@@ -233,3 +234,22 @@ def test_automated_record_is_void_once_the_claim_changes():
     A.apply(c, [finding(c)], "unchanged", TODAY)
     c["claim"] = "something else"
     assert R.auto_state(c) == "void" and R.publishable(c)
+
+
+def test_a_recorded_owner_approval_triggers_a_new_version_but_keeps_verify_green(world):
+    """PR #1 review (P1): an approval changes what MAP.md says, so the weekly job must publish it on its
+    next run instead of waiting for the renewal threshold. `map verify` still passes meanwhile: the
+    published version understates approvals, it never claims one that is not recorded."""
+    need, why = A.needs_version(world["claims"], TODAY, world["maps"])
+    assert not need, why
+    c = world["claims"][0]
+    c.update(approved_by=R.OWNER_LOGIN, approved_at=TODAY.isoformat(),
+             approval_ref=f"https://github.com/{R.REPOSITORY}/pull/9")
+    c["review_event_hash"] = R.review_event_hash(c)
+    assert R.owner_approved(c)
+    need, why = A.needs_version(world["claims"], TODAY, world["maps"])
+    assert need and "owner approval" in why
+    R.save(world["claims"], world["reg"])
+    p = M.latest_map(world["maps"])
+    m = json.loads(p.read_text(encoding="utf-8"))
+    assert M.content(m) == M.content(M.build_map(world["claims"], CTL, m["version"], M.load_governance(), M.load_copy()))

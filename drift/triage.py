@@ -5,7 +5,8 @@ evidence to Claude as DATA inside a fixed prompt, and records one of:
 
     affects_claim | noise | needs_human
 
-plus a one-line reason. It never edits the registry. A human reads the triage and decides.
+plus a one-line reason. It never edits the registry. The owner reads the triage and decides;
+`needs_human` means "waits for the owner's decision" (the label is kept for schema compatibility).
 
 Security posture (README, "Security posture"): fetched vendor text is untrusted input.
 - Fixed system prompt; the vendor text is wrapped in delimiters and labelled as data.
@@ -15,9 +16,9 @@ Security posture (README, "Security posture"): fetched vendor text is untrusted 
   the 300-character reason limit is checked locally.
 - No thinking, low max_tokens, temperature 0.
 - Injection filter: a heuristic. Evidence text that matches instruction-like phrases ("ignore
-  previous instructions", "mark this as noise", ...) is never sent and is routed to a human, and a
+  previous instructions", "mark this as noise", ...) is never sent and is routed to the owner, and a
   "noise" verdict on such text is overturned. The containment is not the filter: it is that the model
-  has no tools with side effects and a human reviews every verdict.
+  has no tools with side effects and the owner decides on every flagged change.
 - Deterministic verdicts no model can downgrade: a `stale` finding (review overdue) carries
   `review_due: true`, a `lifecycle` finding carries `lifecycle_signal: true`, an unresolved review
   (outcome not `supported`) carries `review_unresolved: true`, and an excerpt that no longer matches
@@ -109,7 +110,7 @@ CLASSIFY_TOOL = {
 }
 
 # Heuristic safety net. Matches the usual shapes of injected instructions in scraped text. It will miss
-# things; the containment is that the model has no side-effecting tools and a human reviews.
+# things; the containment is that the model has no side-effecting tools and the owner decides.
 INJECTION_RE = re.compile(
     r"\b(ignore|disregard|forget)\b.{0,40}\b(previous|prior|above|all|earlier)\b.{0,20}\binstructions?\b"
     r"|\b(mark|classify|label|treat)\s+(this|it)\s+as\b"
@@ -260,6 +261,9 @@ def triage_findings(findings: list[dict], claims_by_id: dict, api_key: str | Non
         claim_text = f.get("claim") or claims_by_id.get(f["id"], {}).get("claim", "")
         if "error" in f["reasons"]:
             r.update(verdict="needs_human", reason=f"source could not be verified: {f.get('error')}", source="rule", outcome="rule")
+        elif "freshness" in f["reasons"]:
+            why = next((n for n in f.get("notes") or [] if n.startswith("freshness:")), "freshness rule broken")
+            r.update(verdict="needs_human", reason=f"time-based claim no longer holds ({why})", source="rule", outcome="rule")
         elif not needs_model:
             why = ("excerpt does not match its stored digest: re-take it and review" if r["integrity"] else
                    "review not supported: fix the receipt or the claim" if r["review_unresolved"] else
