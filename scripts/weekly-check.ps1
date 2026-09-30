@@ -99,7 +99,7 @@ function Open-FailureIssue {
   & $ghExe auth status *> $null  # its output names the account; never logged
   if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: gh is not usable (auth status exit $LASTEXITCODE); no issue opened (exit code unchanged)"; return }
   $global:LASTEXITCODE = -999999
-  $raw = (& $ghExe issue list --state open --limit 200 --json number,title,labels 2>$null) | Out-String
+  $raw = (& $ghExe issue list --state open --limit 200 --json 'number,title,labels' 2>$null) | Out-String
   if ($LASTEXITCODE -ne 0) { Write-Stamped "alert: cannot list open issues (exit $LASTEXITCODE); no issue opened"; return }
   try { $parsed = $raw | ConvertFrom-Json } catch { Write-Stamped 'alert: cannot read the open-issue list; no issue opened'; return }
   $open = 0

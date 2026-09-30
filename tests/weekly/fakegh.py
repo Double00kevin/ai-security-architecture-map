@@ -37,8 +37,14 @@ def arg(flag):
 if args[:2] == ["auth", "status"]:
     sys.exit(1 if os.environ.get("FAKEGH_UNAVAILABLE") else 0)
 if args[:2] == ["issue", "list"]:
-    if arg("--json") is None:
-        sys.exit(2)
+    # Strict like the real gh: one comma-separated field list (a split argument would be an error there).
+    if (arg("--json"), arg("--jq")) not in (("number,title,labels", None), ("number", "length")):
+        print(f"fake gh: unexpected issue list arguments {args[2:]}", file=sys.stderr)
+        sys.exit(1)
+    extra = [a for a in args[2:] if a.startswith("-") and a not in ("--state", "--limit", "--json", "--jq", "--label")]
+    if extra:
+        print(f"fake gh: unknown flags {extra}", file=sys.stderr)
+        sys.exit(1)
     want = arg("--label")
     shown = [i for i in issues if want is None or any(lb["name"] == want for lb in i["labels"])]
     print(len(shown) if arg("--jq") == "length" else json.dumps(shown))
