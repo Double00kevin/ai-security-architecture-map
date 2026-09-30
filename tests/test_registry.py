@@ -367,3 +367,25 @@ def test_fetch_window_is_seven_days_before_the_review_and_never_after(fetched, o
         with pytest.raises(R.RegistryError, match="fetched"):
             _review.record(c, "supported", "claude-code", _dt.date(2026, 9, 29))
         assert R.publishable(reviewed(c, when="2026-09-29"))
+
+
+@pytest.mark.parametrize("secondary", [False, True])
+def test_evidence_without_a_fetch_date_cannot_be_reviewed_or_published(secondary):
+    """PR #1 review (P2): a receipt with a snapshot but no fetched_at must not skip the fetch-window rule."""
+    if secondary:
+        extra = {"source_type": "pypi", "source_url": "https://pypi.org/project/other/", "snapshot": "y",
+                 "snapshot_hash": R.excerpt_sha256("y"), "fetched_at": None, "supports": ["availability"]}
+        c = claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x"), fetched_at="2026-09-28", sources=[extra],
+                  assertions=["availability"], supports=["availability"])
+    else:
+        c = claim(snapshot="x", snapshot_hash=R.excerpt_sha256("x"), fetched_at=None,
+                  assertions=["availability"], supports=["availability"])
+    with pytest.raises(R.RegistryError, match="no fetch date"):
+        _review.record(c, "supported", "claude-code", _dt.date(2026, 9, 29))
+    assert any("no fetch date" in w for w in R.publishable(reviewed(c, when="2026-09-29", date_evidence=False)))
+
+
+def test_a_receipt_with_nothing_fetched_still_needs_no_date():
+    c = claim(assertions=["availability"], supports=["availability"])  # no snapshot, no fetched_at
+    _review.record(c, "unsupported", "claude-code", _dt.date(2026, 9, 29))
+    assert R.review_state(c) == "valid"

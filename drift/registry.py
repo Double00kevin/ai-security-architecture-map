@@ -277,10 +277,12 @@ def last_check(c: dict) -> tuple[dt.date | None, str | None]:
     return best
 
 
-def fetch_window_problems(fetched: list, reviewed_at) -> list[str]:
+def fetch_window_problems(fetched: list, reviewed_at, has_evidence: list[bool] | None = None) -> list[str]:
     """Receipts whose fetch date is after the review date or more than REVIEW_FETCH_MAX_DAYS before it.
-    A receipt with no fetch date and nothing fetched (None) has nothing to assess and is skipped."""
+    A receipt that holds evidence (`has_evidence[i]`) must have a fetch date; only a receipt with nothing
+    fetched and no date has nothing to assess and is skipped."""
     out = []
+    evidence = list(has_evidence or [])
     try:
         day = _date(reviewed_at)
     except ValueError:
@@ -291,7 +293,11 @@ def fetch_window_problems(fetched: list, reviewed_at) -> list[str]:
         except ValueError:
             out.append(f"receipt {i}: fetch date {f!r} is not YYYY-MM-DD")
             continue
-        if d is None or day is None:
+        if d is None:
+            if i < len(evidence) and evidence[i]:
+                out.append(f"receipt {i} holds evidence but has no fetch date; re-take it with `drift snapshot`")
+            continue
+        if day is None:
             continue
         gap = (day - d).days
         if gap < 0:
@@ -304,7 +310,8 @@ def fetch_window_problems(fetched: list, reviewed_at) -> list[str]:
 
 def review_fetch_problems(c: dict) -> list[str]:
     """The fetch-window rule applied to the fetch dates the review event recorded."""
-    return fetch_window_problems(list(c.get("review_fetched_at") or []), c.get("reviewed_at"))
+    return fetch_window_problems(list(c.get("review_fetched_at") or []), c.get("reviewed_at"),
+                                 [bool(r.get("snapshot") or r.get("snapshot_hash")) for r in receipts(c)])
 
 
 def freshness_problem(r: dict, excerpt: str | None, today: dt.date) -> str | None:
