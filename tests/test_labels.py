@@ -25,7 +25,7 @@ DOCS = ["README.md", "MAP.md", "CONTRIBUTING.md", "SECURITY.md", "docs/PUBLICATI
         "render/render_video.py"]
 
 
-def approve(c: dict, when: str = "2026-10-02") -> dict:
+def approve(c: dict, when: str = "2026-09-29") -> dict:  # never later than the v2026.09.29 test publication
     c.update(approved_by=R.OWNER_LOGIN, approved_at=when, approval_ref=URL)
     c["review_event_hash"] = R.review_event_hash(c)
     return c
@@ -54,7 +54,7 @@ def test_generated_map_md_says_what_each_check_was():
     lines = [ln for ln in md.splitlines() if ln.startswith("| Tool ")] and md.splitlines()
     row0 = next(ln for ln in lines if ln.startswith("| Tool 1.0 |"))
     row1 = next(ln for ln in lines if ln.startswith("| Tool 1.1 |"))
-    assert "owner-approved 2026-10-02" in row0 and URL in row0
+    assert "owner-approved 2026-09-29" in row0 and URL in row0
     assert "owner-approved" not in row1 and "AI-assessed (claude-code)" in row1
 
 
@@ -65,7 +65,7 @@ def test_map_json_labels_and_owner_approval_per_tool():
     assert m["schema_version"] == M.SCHEMA_VERSION == 4
     tools = [t for layer in m["layers"] for t in layer["tools"]]
     assert {t["checked_by"] for t in tools} == {"review"}
-    assert tools[0]["owner_approved"] is True and tools[0]["approval_ref"] == URL and tools[0]["approved_at"] == "2026-10-02"
+    assert tools[0]["owner_approved"] is True and tools[0]["approval_ref"] == URL and tools[0]["approved_at"] == "2026-09-29"
     assert all(t["owner_approved"] is False and t["approval_ref"] is None for t in tools[1:])
     assert all(t["reviewed_by"] == "tester" for t in tools)
 

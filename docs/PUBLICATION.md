@@ -103,8 +103,10 @@ today's registry still needs the input/artifact manifest tracked in `DEFERRED.md
   nothing. MAP.md and `map.json` (schema 4, `owner_approved` per tool) say "owner-approved" only when
   all three fields are present and the review event digest is valid. A recorded approval is published
   by the next weekly run (`drift auto` builds a new version when the approvals differ from the published
-  map). Until then `map verify` stays green: the published version may understate approvals, but never
-  claims one that is not recorded. The digest is an integrity
+  map). Until then `map verify` stays green: a published version may under-report approvals recorded
+  after it. It may never overstate one: `map verify` fails when a published "owner-approved" label has no
+  intact matching approval on the same review event in the registry (same claim, review, PR reference and
+  approval date, approved no later than the publication date), including a superseded or revoked one. The digest is an integrity
   check, not a signature: whoever can push to `main` could forge one, so git history and branch
   protection remain the control.
 

@@ -300,7 +300,7 @@ def validate_publication_dates(m: dict) -> None:
                     if t["checked_by"] == "auto" and (checked - reviewed).days > registry.REVIEW_MAX_DAYS:
                         raise MapError("automated check exceeds the review renewal window")
                     if schema >= 4:
-                        _validate_approval(t, reviewed)
+                        _validate_approval(t, reviewed, day)
             limit = min(limit, min(checks) + dt.timedelta(days=registry.STALE_DAYS))
         if expiry_date != limit:
             raise MapError(f"publication expires {expiry_date}, but its recorded checks require {limit}")
@@ -308,12 +308,20 @@ def validate_publication_dates(m: dict) -> None:
         raise MapError(f"invalid publication dates: {e}") from e
 
 
-def _validate_approval(t: dict, reviewed: dt.date) -> None:
-    """Schema 4: a tool is labelled owner-approved only with a date and a PR reference of this repository."""
+def _validate_approval(t: dict, reviewed: dt.date, published: dt.date) -> None:
+    """Schema 4: a tool is labelled owner-approved only with a PR reference of this repository and an
+    approval date between the review and the publication date. Whether the registry backs it is checked
+    by `approval_problems` (verify)."""
     if t.get("owner_approved") is True:
         ref = t.get("approval_ref") or ""
-        if not registry.APPROVAL_REF_RE.fullmatch(ref) or dt.date.fromisoformat(t.get("approved_at") or "") < reviewed:
+        try:
+            approved = dt.date.fromisoformat(t.get("approved_at") or "")
+        except ValueError:
+            approved = None
+        if not registry.APPROVAL_REF_RE.fullmatch(ref) or approved is None or approved < reviewed:
             raise MapError(f"{t.get('name')}: owner approval without a valid date and pull request reference")
+        if approved > published:
+            raise MapError(f"{t.get('name')}: owner approval dated {approved}, after the publication date {published}")
     elif t.get("owner_approved") is not False or t.get("approval_ref") is not None or t.get("approved_at"):
         raise MapError(f"{t.get('name')}: inconsistent owner approval fields")
 
@@ -582,10 +590,42 @@ CONTENT_TOOL_KEYS = ("name", "id", "status", "owner", "ownership", "source_url")
 APPROVAL_TOOL_KEYS = ("owner_approved", "approval_ref")
 
 
+def approval_problems(m: dict, claims: list[dict]) -> list[str]:
+    """Every tool a publication labels owner-approved must match an intact approval, on the same review
+    event, in the registry: same claim, same review (hash, date, assessor), same PR reference and approval
+    date, approved no later than the publication date. A publication may under-report (omit an approval
+    recorded after it); it may never show one the registry does not back. A superseded or revoked
+    approval therefore fails `map verify` until a new version is published (`drift auto` builds one)."""
+    by_id = {c["id"]: c for c in claims}
+    day = version_date(m["version"])
+    out = []
+    for layer in m.get("layers", []):
+        for t in layer.get("tools", []):
+            if t.get("owner_approved") is not True:
+                continue
+            c = by_id.get(t.get("id"))
+            if c is None:
+                why = "the registry has no such claim"
+            elif not registry.owner_approved(c):
+                why = "the registry holds no intact owner approval for it"
+            elif (c.get("review_hash"), str(c.get("reviewed_at")), c.get("reviewed_by")) != \
+                    (t.get("review_hash"), t.get("reviewed_at"), t.get("reviewed_by")):
+                why = "the registry's approval is on a different review event"
+            elif (str(c["approval_ref"]), str(c["approved_at"])) != (t.get("approval_ref"), t.get("approved_at")):
+                why = (f"the registry records {c['approval_ref']} on {c['approved_at']}, "
+                       f"not {t.get('approval_ref')} on {t.get('approved_at')}")
+            elif registry._date(c["approved_at"]) > day:
+                why = f"it was approved {c['approved_at']}, after the publication date {day}"
+            else:
+                continue
+            out.append(f"{t.get('id')} ({t.get('name')}) is published as owner-approved but {why}")
+    return out
+
+
 def approvals(m: dict) -> list[tuple]:
     """Which tools a map labels owner-approved, and by which pull request. Compared by `drift auto` so a
     recorded approval is published by the next weekly run. Not part of `content`: `map verify` stays green
-    while a published version understates approvals (it never claims one that is not recorded)."""
+    while a published version under-reports approvals, and `approval_problems` fails it on any it overstates."""
     return [(t.get("id"), t.get("owner_approved") is True, t.get("approval_ref"))
             for layer in m.get("layers", []) for t in layer.get("tools", [])]
 
@@ -661,6 +701,7 @@ def verify_publication(maps_dir: Path = MAPS_DIR, registry_path: Path | None = N
         validate_map(committed, claims, dates=False)
     except MapError as e:
         diffs.append(str(e))
+    diffs.extend(approval_problems(committed, claims))
 
     def cmp(name: str, want: str, got: str, how: str = "differs from what the published map.json renders to") -> None:
         if want != got:
