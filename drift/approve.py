@@ -15,7 +15,8 @@ The three fields are part of the review event digest, so editing any of them, or
 approve, voids the event. It refuses, and writes nothing, unless all of these hold:
 
 - the GitHub REST API says the PR is merged into `main` of registry.REPOSITORY, and
-  `merged_by.login` is registry.OWNER_LOGIN;
+  `merged_by.login` is registry.OWNER_LOGIN. The answer must come from the fixed endpoint
+  https://api.github.com/repos/<owner>/<repo>/pulls/<n> itself: every redirect is refused;
 - the merge commit is in the local clone (run `git fetch origin main` first);
 - the PR changed at least one review event: registry/claims.yaml is compared between the merge
   commit's first parent (the base the PR was merged into) and the merge commit, and only claims
@@ -52,16 +53,34 @@ class ApprovalError(Exception):
     pass
 
 
+class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
+    """The approval endpoint is fixed. Any redirect is refused before its target is requested, so
+    data from another origin, or over HTTP, can never attest a merge."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ApprovalError(f"GitHub API answered {code} with a redirect; refusing: approval data must come "
+                            f"from {req.full_url} itself")
+
+
+def opener(*handlers) -> urllib.request.OpenerDirector:
+    """An opener that never follows a redirect (extra handlers: tests pass a canned transport)."""
+    return urllib.request.build_opener(_RefuseRedirect, *handlers)
+
+
 def fetch_pr(number: int) -> dict:
-    """GET the pull request from the GitHub REST API (HTTPS, fixed host, timeout, size cap)."""
-    req = urllib.request.Request(API.format(repo=registry.REPOSITORY, number=number), headers={
+    """GET the pull request from the GitHub REST API: HTTPS, the one fixed endpoint, no redirects,
+    timeout, size cap."""
+    url = API.format(repo=registry.REPOSITORY, number=number)
+    req = urllib.request.Request(url, headers={
         "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "ai-security-architecture-map-approve"})
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         req.add_unredirected_header("Authorization", f"Bearer {token}")  # never sent on to a redirect target
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
+        with opener().open(req, timeout=TIMEOUT_S) as resp:
+            if resp.geturl() != url:
+                raise ApprovalError(f"GitHub API response came from {resp.geturl()!r}, not {url}; refusing")
             body = resp.read(MAX_BYTES + 1)
     except OSError as e:  # URLError/HTTPError are OSErrors; the message never contains the token
         raise ApprovalError(f"GitHub API request for PR {number} failed: {type(e).__name__}: {str(e)[:200]}") from None

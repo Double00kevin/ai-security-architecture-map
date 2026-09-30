@@ -151,58 +151,68 @@ def test_owner_is_one_config_value_not_an_argument():
     assert "--owner" not in inspect.getsource(AP.main)
 
 
-def test_fetch_pr_uses_the_token_without_printing_it(monkeypatch, capsys):
-    seen = {}
+# ---- fetch_pr over a REAL urllib opener with a canned HTTPS transport (no sockets) ----
 
-    class Resp:
-        def __enter__(self):
-            return self
+from tests.conftest import CannedHTTPS  # noqa: E402
 
-        def __exit__(self, *a):
-            return False
+API_URL = f"https://api.github.com/repos/{R.REPOSITORY}/pulls/{N}"
+FORGED = json.dumps({"number": N, "merged": True, "merged_by": {"login": R.OWNER_LOGIN},
+                     "merged_at": "2026-10-02T10:00:00Z", "merge_commit_sha": "0" * 40, "html_url": URL,
+                     "base": {"ref": "main", "repo": {"full_name": R.REPOSITORY}}}).encode()
 
-        def read(self, n):
-            return json.dumps({"number": N}).encode()
 
-    def fake(req, timeout):
-        seen.update(url=req.full_url, auth=req.get_header("Authorization"), timeout=timeout)
-        return Resp()
+class Recording(CannedHTTPS):
+    """The canned transport, also keeping each request so headers can be inspected."""
 
+    def __init__(self, routes):
+        super().__init__(routes)
+        self.requests = []
+
+    def https_open(self, req):
+        self.requests.append(req)
+        return super().https_open(req)
+
+
+def transport(monkeypatch, routes):
+    t = Recording(routes)
+    real = AP.opener
+    monkeypatch.setattr(AP, "opener", lambda *h: real(t))
+    return t
+
+
+def test_fetch_pr_reads_a_normal_response_and_keeps_the_token_unredirected(monkeypatch, capsys):
     fake_token = "x" * 8 + "-fake-" + "y" * 8  # built at runtime; not a real credential
     monkeypatch.setenv("GITHUB_TOKEN", fake_token)
-    monkeypatch.setattr(AP.urllib.request, "urlopen", fake)
-    assert AP.fetch_pr(N) == {"number": N}
-    assert seen["url"] == f"https://api.github.com/repos/{R.REPOSITORY}/pulls/{N}" and seen["timeout"] == AP.TIMEOUT_S
-    assert seen["auth"] == f"Bearer {fake_token}" and fake_token not in capsys.readouterr().out
+    t = transport(monkeypatch, {API_URL: (200, {"Content-Type": "application/json"}, FORGED)})
+    assert AP.fetch_pr(N)["number"] == N
+    (req,) = t.requests
+    assert req.full_url == API_URL
+    assert "Authorization" not in req.headers and req.unredirected_hdrs.get("Authorization") == f"Bearer {fake_token}"
+    assert fake_token not in capsys.readouterr().out
 
 
-def test_token_is_never_forwarded_on_a_redirect(monkeypatch):
-    """urllib copies ordinary headers onto a redirected request; the token must be an unredirected header."""
-    captured = {}
-
-    def fake(req, timeout):
-        captured["req"] = req
-        raise OSError("stop")
-
-    monkeypatch.setenv("GITHUB_TOKEN", "t" * 12)
-    monkeypatch.setattr(AP.urllib.request, "urlopen", fake)
-    with pytest.raises(AP.ApprovalError):
+@pytest.mark.parametrize("code", [301, 302, 303, 307, 308])
+@pytest.mark.parametrize("target", ["https://outside.example.invalid/forged",
+                                    f"http://api.github.com/repos/{R.REPOSITORY}/pulls/{N}",
+                                    f"https://api.github.com/repos/{R.REPOSITORY}/pulls/{N}?page=2"])
+def test_a_redirect_is_refused_before_the_target_is_read(monkeypatch, code, target):
+    """Audit round 2, N2: JSON from another origin (or over HTTP) must never attest a merge."""
+    t = transport(monkeypatch, {API_URL: (code, {"Location": target}, b""), target: (200, {}, FORGED)})
+    with pytest.raises(AP.ApprovalError, match="redirect"):
         AP.fetch_pr(N)
-    req = captured["req"]
-    assert "Authorization" not in req.headers and req.unredirected_hdrs.get("Authorization") == "Bearer " + "t" * 12
+    assert [r.full_url for r in t.requests] == [API_URL]  # the redirect target was never requested
+
+
+def test_a_redirected_approval_records_nothing(merged, monkeypatch, capsys):
+    before = merged["reg"].read_bytes()
+    target = "https://outside.example.invalid/forged"
+    forged = json.dumps({**merged["pr"]}).encode()
+    transport(monkeypatch, {API_URL: (302, {"Location": target}, b""), target: (200, {}, forged)})
+    assert AP.main(["--pr", str(N), "--registry", str(merged["reg"]), "--repo-dir", str(merged["repo"])]) == 1
+    assert "redirect" in capsys.readouterr().err and merged["reg"].read_bytes() == before
 
 
 def test_a_non_object_api_response_is_refused(monkeypatch):
-    class Resp:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
-        def read(self, n):
-            return b"[1, 2]"
-
-    monkeypatch.setattr(AP.urllib.request, "urlopen", lambda req, timeout: Resp())
+    transport(monkeypatch, {API_URL: (200, {}, b"[1, 2]")})
     with pytest.raises(AP.ApprovalError, match="not a pull request object"):
         AP.fetch_pr(N)
