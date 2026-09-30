@@ -579,6 +579,15 @@ def watch(map_path: Path | None, governance: list[dict], today: dt.date) -> list
 
 
 CONTENT_TOOL_KEYS = ("name", "id", "status", "owner", "ownership", "source_url")
+APPROVAL_TOOL_KEYS = ("owner_approved", "approval_ref")
+
+
+def approvals(m: dict) -> list[tuple]:
+    """Which tools a map labels owner-approved, and by which pull request. Compared by `drift auto` so a
+    recorded approval is published by the next weekly run. Not part of `content`: `map verify` stays green
+    while a published version understates approvals (it never claims one that is not recorded)."""
+    return [(t.get("id"), t.get("owner_approved") is True, t.get("approval_ref"))
+            for layer in m.get("layers", []) for t in layer.get("tools", [])]
 
 
 def content(m: dict) -> dict:

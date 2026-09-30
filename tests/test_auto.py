@@ -234,3 +234,22 @@ def test_automated_record_is_void_once_the_claim_changes():
     A.apply(c, [finding(c)], "unchanged", TODAY)
     c["claim"] = "something else"
     assert R.auto_state(c) == "void" and R.publishable(c)
+
+
+def test_a_recorded_owner_approval_triggers_a_new_version_but_keeps_verify_green(world):
+    """PR #1 review (P1): an approval changes what MAP.md says, so the weekly job must publish it on its
+    next run instead of waiting for the renewal threshold. `map verify` still passes meanwhile: the
+    published version understates approvals, it never claims one that is not recorded."""
+    need, why = A.needs_version(world["claims"], TODAY, world["maps"])
+    assert not need, why
+    c = world["claims"][0]
+    c.update(approved_by=R.OWNER_LOGIN, approved_at=TODAY.isoformat(),
+             approval_ref=f"https://github.com/{R.REPOSITORY}/pull/9")
+    c["review_event_hash"] = R.review_event_hash(c)
+    assert R.owner_approved(c)
+    need, why = A.needs_version(world["claims"], TODAY, world["maps"])
+    assert need and "owner approval" in why
+    R.save(world["claims"], world["reg"])
+    p = M.latest_map(world["maps"])
+    m = json.loads(p.read_text(encoding="utf-8"))
+    assert M.content(m) == M.content(M.build_map(world["claims"], CTL, m["version"], M.load_governance(), M.load_copy()))

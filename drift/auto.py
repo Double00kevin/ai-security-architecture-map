@@ -163,6 +163,8 @@ def needs_version(claims: list[dict], today: dt.date, maps_dir: Path) -> tuple[b
         return True, f"registry no longer builds the published layout ({e})"
     if mapgen.content(cand) != mapgen.content(pub):
         return True, f"content differs from {pub['version']} (reviewed registry changes)"
+    if mapgen.approvals(cand) != mapgen.approvals(pub):
+        return True, f"owner approvals differ from {pub['version']} (recorded by `drift approve`)"
     left = (dt.date.fromisoformat(pub["expires"]) - today).days
     if left <= RENEW_DAYS:
         return True, f"{pub['version']} re-check due in {left} day(s)"
