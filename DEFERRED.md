@@ -8,9 +8,8 @@ audit are marked F.., entries from the 2026-09-29 audit A..; where the two overl
 
 The 2026-09-29 audit fixes closed A01 (labels and owner approval), A02 (schema), A03 (review-event
 digest), A04 (fetch window), A05 (freshness rules) and A17 (poster wording), and added detection for
-A07/A10. The audit report itself is not in this repository; A06, A09, A15 and A16 are the F-entries
-below. For A11, A12, A13, A14 and A18 the scope and closure criteria still have to be copied from the
-audit report by the owner; nothing here should be read as a summary of them.
+A07/A10. A06, A09, A15 and A16 are the F-entries below. Scope and closure criteria for A08, A11-A14
+and A18 are taken from the audit as supplied by the owner.
 
 ### A07: weekly job in a disposable checkout
 
@@ -22,15 +21,53 @@ audit report by the owner; nothing here should be read as a summary of them.
 - Closed when: the scheduled job creates and removes its own checkout per run, and the harness
   proves an interrupted run leaves nothing behind.
 
-### A08: advisory triage
+### A08: optional AI triage can block deterministic publication
 
-- Left: as described in the audit report (not in this repository).
-- Closed when: the audit's closure criteria are copied here and met.
+- Scope: a nonzero `drift triage` result marks the stage failed, and the publish gate then blocks all
+  publication; the wrapper runs triage only when `.env` exists.
+- Closed when: the owner decides whether triage is advisory or mandatory. If advisory, a triage
+  failure stays visible but does not block otherwise-eligible deterministic publication; an
+  environment-injected key is supported; tests cover an API outage and a budget stop; the README
+  states the policy.
 
-### A11, A12, A13, A14, A18
+### A11: receipt extraction can miss material changes outside the excerpt
 
-- Left: as described in the audit report (not in this repository). Not started.
-- Closed when: each finding's scope and closure criteria are copied here from the audit and met.
+- Scope: an excerpt can omit what matters (per the audit, the Helicone excerpt misses the Mintlify
+  acquisition sentence, and the Claude excerpt is truncated before the model lineup).
+- Closed when: receipts are assertion-specific with enough context; a lifecycle or ownership change
+  outside an old excerpt can trigger a review in a fixture test; irrelevant internal API deprecations
+  do not imply product death.
+
+### A12: the URL allowlist does not exclude non-public destinations
+
+- Scope: private, loopback and link-local destinations are not excluded, and resolved addresses are
+  not validated.
+- Closed when: non-public destinations and resolution changes are denied before connecting (tests
+  with mocked resolution), redirects are handled the same way, and public sources still work.
+
+### A13: registry writes and builds are not atomic or locked
+
+- Scope: `registry.save` truncates in place; a manual `drift map build` lacks the staged
+  render-and-promote path `drift auto` uses; there is no publication lock.
+- Closed when: the registry is written to a temp file, validated and atomically replaced; manual and
+  automatic builds share one lock and one staged path; an interrupted write leaves the prior registry
+  intact; concurrent runs fail cleanly.
+
+### A14: YAML loading is not strict
+
+- Scope: duplicate keys are not rejected and there is no strict schema, so unknown fields and wrong
+  types survive loading.
+- Closed when: duplicate keys, typoed security-relevant fields, malformed lists and contradictory
+  dates fail clearly before any mutation or publication, for claims, controls, copy and governance,
+  using only the standard library and PyYAML.
+
+### A18: Quickstart and scheduler setup
+
+- Scope: the Quickstart is one Bash block mixing read-only and mutating steps with no isolated
+  environment; the Windows scheduled task depends on PATH.
+- Closed when: read-only setup is separate from maintainer procedures; PowerShell and Bash variants
+  use explicit interpreters and a venv; a clean checkout can run a read-only check without a model
+  key; the docs say how the operator finds the last successful scheduled run.
 
 ### Evidence policy for stable historical facts (from A04)
 
