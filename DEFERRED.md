@@ -102,8 +102,15 @@ and A18 are taken from the audit as supplied by the owner.
   zero-width characters, instructions split across the before/after excerpts, instructions inside
   version strings) with a measured miss rate for `INJECTION_RE`, and the same corpus replayed against
   the model with the fixed prompt to measure how often a "noise" verdict survives.
-- Closed when: `tests/fixtures/injection-corpus/` exists with at least 50 labelled cases, a test reports
-  the filter's recall on it, and the README states the measured number instead of only "heuristic".
+- Left (A15): deterministic signals (stale, lifecycle, unresolved review, integrity, freshness, error)
+  must survive every possible model output, and no model output may change what is published.
+- Closed when:
+  - a labelled corpus in `tests/fixtures/injection-corpus/` covers the cases above, and a test reports
+    the filter's recall on it; the README states the measured number instead of only "heuristic";
+  - model misclassification is measured separately from the regex recall, by replaying the corpus
+    against the fixed prompt, and reported on its own;
+  - tests prove that every model verdict, including malformed or adversarial ones, leaves the
+    deterministic flags set and changes nothing in the registry, the map or the publication path.
 
 ## F12 / A06: manifest of generated artifacts
 
@@ -130,9 +137,12 @@ and A18 are taken from the audit as supplied by the owner.
 - Left: publish weekly reports to a `reports/` branch and open a pull request instead of pushing to
   `main`; make the `ci` workflow (tests, map check, map verify, gitleaks) a required status check on
   `main` with branch protection.
-- Closed when: the weekly job no longer pushes to `main`, and the repository settings show `main`
-  protected with the CI checks required. (Repository settings are the owner's call; nothing here
-  changes them.)
+- Left (A09): published versions, their tags, and any release assets are not protected against being
+  moved, deleted or replaced.
+- Closed when: the weekly job no longer pushes to `main`; the repository settings show `main` protected
+  with the CI checks required; and version tags, releases and their assets are immutable (tag
+  protection or rulesets that forbid moving or deleting `v*` tags, and releases whose assets cannot be
+  replaced). (Repository settings are the owner's call; nothing here changes them.)
 
 ## F19: retry with backoff in the fetcher
 
@@ -162,4 +172,10 @@ and A18 are taken from the audit as supplied by the owner.
 - Left: a linter (for example ruff, pinned with hashes in `requirements-dev.txt`) and a coverage floor
   (for example coverage.py with `fail_under`) in CI. Adding either is a new dev dependency, which the
   remediation brief did not allow.
-- Closed when: CI runs the linter and coverage with a stated floor, and both pass on `main`.
+- Left (A16): dependency maintenance. There is no advisory check on the pinned dependencies, and the
+  lock refresh (`uv pip compile --universal --generate-hashes`) is not a documented, tested procedure.
+- Closed when: CI runs the linter and coverage with a stated floor, and both pass on `main`; dependency
+  advisories are checked (repository advisory alerts enabled by the owner, or an advisory scan of the
+  pinned lockfiles in CI that fails on known vulnerabilities); and an owner-driven lock refresh
+  procedure is documented and tested (regenerate both lockfiles with hashes, install with
+  `--require-hashes`, run the full suite) before its result is merged.
