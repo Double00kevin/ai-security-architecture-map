@@ -19,10 +19,18 @@ URL = f"https://github.com/{R.REPOSITORY}/pull/9"
 MISLABEL = re.compile(r"a person's review|person's `supported` review|human review|read by a person|"
                       r"waits? for a person|needs? a person|review(?:ed)? by a person|record of the person|"
                       r"written only by a person|by a person via|a person reads|a person must review|"
-                      r"a human reviews|routed to a human|human re-check|a human job", re.I)
+                      r"a human reviews|routed to a human|human re-check|a human job|"
+                      r"(?:reviewed|checked|read) by hand", re.I)
 DOCS = ["README.md", "MAP.md", "CONTRIBUTING.md", "SECURITY.md", "docs/PUBLICATION.md", ".claude/CLAUDE.md",
-        "DEFERRED.md", "registry/claims.yaml", "scripts/weekly-check.ps1", "render/render_map.py",
-        "render/render_video.py"]
+        "DEFERRED.md", "registry/claims.yaml", "registry/governance.yaml", "CHANGELOG.md",
+        "scripts/weekly-check.ps1", "render/render_map.py", "render/render_video.py"]
+# Explicitly historical passages that may keep the old wording: (file, a substring of the line). Each must
+# still match a line that carries a mislabel, so a stale entry fails too. Never add current wording here.
+HISTORICAL = [
+    ("CHANGELOG.md", '"human review" (MAP.md)'),  # the v2026.09.29.1 provenance correction quotes the old label
+    ("CHANGELOG.md", "silently restore an invalidated human review"),  # the v2026.09.29 entry, as published
+    ("CHANGELOG.md", "(historical wording; see the v2026.09.29.1 entry)"),  # the policy paragraph as it stood
+]
 
 
 def approve(c: dict, when: str = "2026-09-29") -> dict:  # never later than the v2026.09.29 test publication
@@ -33,9 +41,27 @@ def approve(c: dict, when: str = "2026-09-29") -> dict:  # never later than the 
 
 @pytest.mark.parametrize("path", DOCS + [str(p.relative_to(R.ROOT)) for p in sorted((R.ROOT / "drift").rglob("*.py"))])
 def test_no_public_text_calls_a_check_a_persons_review(path):
-    text = (R.ROOT / path).read_text(encoding="utf-8")
-    hits = [m.group(0) for m in MISLABEL.finditer(text)]
+    allowed = [marker for f, marker in HISTORICAL if f == path]
+    hits = [f"line {i}: {m.group(0)}" for i, line in enumerate((R.ROOT / path).read_text(encoding="utf-8").splitlines(), 1)
+            for m in MISLABEL.finditer(line) if not any(marker in line for marker in allowed)]
     assert hits == [], f"{path}: {hits}"
+
+
+@pytest.mark.parametrize("path,marker", HISTORICAL)
+def test_every_historical_allowance_is_still_needed(path, marker):
+    lines = [ln for ln in (R.ROOT / path).read_text(encoding="utf-8").splitlines() if marker in ln]
+    assert lines and all(MISLABEL.search(ln) for ln in lines), f"stale allowance {marker!r} in {path}"
+
+
+def test_governance_wording_keeps_every_review_record_unchanged():
+    """The wording fix may not invent or re-record a governance review."""
+    from drift import mapgen as M
+    assert [(g["name"], g["reviewed_at"], g["reviewed_by"], g["review_due"]) for g in M.load_governance()] == [
+        ("OWASP Top 10 for LLM Applications (2026)", "2026-09-27", "claude", "2026-10-27"),
+        ("OWASP Top 10 for Agentic Applications", "2026-09-27", "claude", "2026-10-27"),
+        ("NIST AI RMF", "2026-09-27", "claude", "2026-10-27"),
+        ("ISO/IEC 42001", "2026-09-27", "claude", "2026-10-27"),
+        ("MITRE ATLAS", "2026-09-27", "claude", "2026-10-27")]
 
 
 def test_generated_map_md_says_what_each_check_was():

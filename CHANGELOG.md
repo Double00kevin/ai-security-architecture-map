@@ -52,7 +52,7 @@ Same tools, controls, evidence and review dates as v2026.09.29; it expires on th
 - Published v2026.09.28 media and its expiry remain unchanged. Recovery limitations and the existing
   direct-to-main publishing route are documented in `docs/PUBLICATION.md`.
 
-Map versions are calendar versions, year first (`vYYYY.MM.DD`, `vYYYY.MM.DD.N` for a same-day re-issue), and are git tags on this repo. The public history of this repository starts at `v2026.09.29`; earlier versions below are kept in `maps/` but have no tags here. A version is trusted until the earlier of 30 days from its date and 30 days from the oldest check behind it (a person's review, or an automated re-check of a routine change that carries a person's review forward for up to 180 days). Versions marked "(automatic)" were published by the weekly job. The 12 security controls are versioned here too but are not drift-checked.
+Map versions are calendar versions, year first (`vYYYY.MM.DD`, `vYYYY.MM.DD.N` for a same-day re-issue), and are git tags on this repo. The public history of this repository starts at `v2026.09.29`; earlier versions below are kept in `maps/` but have no tags here. A version is trusted until the earlier of 30 days from its date and 30 days from the oldest check behind it (a person's review, or an automated re-check of a routine change that carries a person's review forward for up to 180 days) (historical wording; see the v2026.09.29.1 entry). Versions marked "(automatic)" were published by the weekly job. The 12 security controls are versioned here too but are not drift-checked.
 
 ## v2026.09.28 (audit remediation)
 
