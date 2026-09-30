@@ -457,11 +457,37 @@ def test_legacy_pin_is_exact_version_and_digest(tmp_path):
     assert M.verify_publication(maps, render=False)[0] == "failed"
 
 
-def test_pinned_digest_ignores_crlf_checkouts(tmp_path):
+@pytest.mark.parametrize("eol", [b"\n", b"\r\n"], ids=["lf", "crlf"])
+def test_pinned_digest_matches_either_line_ending_of_the_same_content(tmp_path, eol):
+    """The pin is over the canonical LF bytes; a checkout with either line ending must match it. Build
+    each variant from the canonical form: the copied file is already CRLF on a Windows checkout with
+    core.autocrlf, and converting it again would produce different content (\\r\\r\\n)."""
     maps = tmp_path / "maps"
     p = _copy_version("v2026.09.28", maps)
-    p.write_bytes(p.read_bytes().replace(b"\n", b"\r\n"))
+    canonical = p.read_bytes().replace(b"\r\n", b"\n")
+    p.write_bytes(canonical.replace(b"\n", eol))
     assert M.publication_state(p)[0] == "legacy"
+
+
+@pytest.mark.parametrize("damage", [b"\r\r\n", b"\r"], ids=["double-cr", "bare-cr"])
+def test_pinned_digest_is_not_blind_to_other_carriage_returns(tmp_path, damage):
+    """Only CRLF is normalised. Any other change to the bytes, stray CRs included, breaks the pin."""
+    maps = tmp_path / "maps"
+    p = _copy_version("v2026.09.28", maps)
+    canonical = p.read_bytes().replace(b"\r\n", b"\n")
+    p.write_bytes(canonical.replace(b"\n", damage))
+    assert M.publication_state(p)[0] == "invalid"
+
+
+def test_pins_are_the_digest_of_the_committed_blobs():
+    """Each pin equals map_file_sha256 of the file as git stores it (LF), not only of this checkout."""
+    import hashlib
+    import subprocess
+    for version, pin in M.LEGACY_MAPS.items():
+        blob = subprocess.run(["git", "-C", str(R.ROOT), "show", f"HEAD:maps/{version}/map.json"],
+                              capture_output=True, check=True).stdout
+        assert b"\r\n" not in blob, version
+        assert pin == "sha256:" + hashlib.sha256(blob).hexdigest(), version
 
 
 def test_archived_legacy_versions_stay_readable():

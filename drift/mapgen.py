@@ -57,9 +57,11 @@ RENEW_DAYS = 7  # the weekly job publishes a fresh version when the published on
 WEEKLY_RUN_WEEKDAY = 5  # Saturday (date.weekday()); scripts/weekly-check.ps1 is scheduled then
 GOVERNANCE_WARN_DAYS = 7  # `map watch` fails when a governance review is due within this many days
 EXIT_OK, EXIT_FAILED, EXIT_LEGACY = 0, 1, 4  # 4: the newest version is a pinned legacy map; never success
-# Published versions from before the current schema, pinned by exact version id and the SHA-256 of their
-# map.json (LF line endings, so a CRLF checkout hashes the same). Only these can be read as legacy; a
-# lower or missing schema anywhere else is a failure. Never add a version here to make a check pass.
+# Published versions from before the current schema, pinned by exact version id and map_file_sha256 of
+# their map.json: the SHA-256 of the committed (LF) bytes, with CRLF normalised to LF before hashing so a
+# Windows checkout (core.autocrlf) hashes the same. Any other byte difference breaks the pin. Only these
+# can be read as legacy; a lower or missing schema anywhere else is a failure. Never add a version here to
+# make a check pass.
 LEGACY_MAPS = {
     "v2026.09.27": "sha256:dae07e234a5f1eb8d471458451b18dc87c0e8c0c265ede14b3a147f76a8ac918",
     "v2026.09.27.1": "sha256:1ffabdeb9cbe4353b2989277fa3dbd7ec64aad77b9ad48e691a2affc81e87324",
