@@ -6,7 +6,7 @@ Version **v2026.09.29.1** (generated 2026-09-29, re-check due 2026-10-28). 69 to
 
 12 capability areas an AI build can draw on, example tools for each, and one security control to start with.
 
-*Illustrative. Not an endorsement or a complete security baseline.*
+*Illustrative. Not an endorsement or a complete security baseline. A starting point, not a finish line.*
 
 ## 01 · Models & Hosting
 

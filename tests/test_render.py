@@ -237,7 +237,7 @@ def test_copy_is_scoped_as_capability_areas_not_a_universal_stack():
                                 "and one security control to start with.")
     assert copy["video_hook"] == "An AI build can touch up to 12 layers."
     assert copy["video_hook_accent"] == "Every one you use is an attack surface."
-    assert copy["scope_note"] == "Illustrative. Not an endorsement or a complete security baseline."
+    assert copy["scope_note"] == "Illustrative. Not an endorsement or a complete security baseline. A starting point, not a finish line."  # owner-approved wording
     text = " ".join(copy.values()).lower()
     assert "every ai build runs on" not in text and "production ai runs on" not in text
 
@@ -255,9 +255,13 @@ def test_png_draws_the_scope_note_at_its_design_size_between_footer_and_cta():
 
 
 @pytest.mark.parametrize("size", [(1080, 1350), (1080, 1920)], ids=["4x5", "9x16"])
-def test_video_end_card_draws_the_scope_note(size):
+def test_video_end_card_draws_the_scope_note_at_design_size(size):
+    """Wrapped to at most two lines at the design size; never shrunk."""
     import render_video as RV
     m = mini_map()
     sc = RV.Scene(*size, [])
     sc.outro(3.9, RV.video_copy(m), m)
-    assert any(k.startswith("scope.") for k, _ in sc.runs)
+    runs = [k for k, _ in sc.runs if k.startswith("scope.")]
+    assert 1 <= len(runs) <= 2
+    f, lines = sc.fit_wrap("small", m["copy"]["scope_note"], size[0] - 160)
+    assert f.size == sc.sizes["small"] and len(lines) == len(runs)

@@ -25,8 +25,9 @@ Same tools, controls, evidence and review dates as v2026.09.29; it expires on th
 - Poster: the subtitle now reads "12 capability areas an AI build can draw on, example tools for
   each, and one security control to start with." (was "12 layers every AI build runs on, the tools
   for each, and the security control none of them should ship without."), and a scope line reads
-  "Illustrative. Not an endorsement or a complete security baseline." The video hook reads "An AI
-  build can touch up to 12 layers. Every one you use is an attack surface."
+  "Illustrative. Not an endorsement or a complete security baseline. A starting point, not a finish
+  line." The video hook reads "An AI build can touch up to 12 layers. Every one you use is an attack
+  surface." Wording approved by the owner.
 - Media: map.png. Videos are rendered on demand for posts.
 
 ## v2026.09.29 (new repository name; publication integrity)

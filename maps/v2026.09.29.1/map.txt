@@ -128,7 +128,7 @@ OWASP Agentic Top 10
 NIST AI RMF
 ISO/IEC 42001
 MITRE ATLAS
-Illustrative. Not an endorsement or a complete security baseline.
+Illustrative. Not an endorsement or a complete security baseline. A starting point, not a finish line.
 Save this for your next build. 
 Security is a layer-by-layer job.
 @00Kevin
